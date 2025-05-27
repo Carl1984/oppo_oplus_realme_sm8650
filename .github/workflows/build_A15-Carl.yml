@@ -109,10 +109,18 @@ jobs:
           cd kernel_workspace/common
           cp ../SukiSU_patch/69_hide_stuff.patch ./
           patch -p1 < 69_hide_stuff.patch
-
-          # Add Pathc for lz4
-          patch -p1 < ../../.repo/manifests/patches/001-lz4.patch
-          patch -p1 < ../../.repo/manifests/patches/002-zstd.patch
+          
+      - name: 同步lz4patch
+        uses: actions/checkout@v4
+        with:
+          path: 'kernel_workspace'          # 本地存放路径
+          sparse-checkout: 'patches'  # 只检出特定目录
+          sparse-checkout-cone-mode: true
+          
+      - name: 应用 lz4 patch  
+          cd kernel_workspace/patches
+          patch -p1 < ./001-lz4.patch
+          patch -p1 < ./002-zstd.patch
 
       - name: 应用 lz4k 补丁
         run: |
