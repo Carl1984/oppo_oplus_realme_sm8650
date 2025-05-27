@@ -9,8 +9,8 @@ jobs:
       - name: 初始化源码仓库
         run: |
           rm -rf kernel_workspace && mkdir kernel_workspace && cd kernel_workspace
-          mkdir patches
-          cd ./patches
+          mkdir common
+          cd ./common
           pwd
           ls
           cd ..
@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
 
-          path: 'kernel_workspace/patches'          # 本地存放路径
+          path: 'kernel_workspace'          # 本地存放路径
           sparse-checkout: 'patches'  # 只检出特定目录
           sparse-checkout-cone-mode: true
           
