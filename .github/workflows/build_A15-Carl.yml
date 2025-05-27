@@ -119,7 +119,8 @@ jobs:
           
       - name: 应用 lz4 patch  
         run: |
-          cd kernel_workspace/patches
+          cd kernel_workspace/common
+          cp ../patches/* ./
           patch -p1 < ./001-lz4.patch
           patch -p1 < ./002-zstd.patch
 
