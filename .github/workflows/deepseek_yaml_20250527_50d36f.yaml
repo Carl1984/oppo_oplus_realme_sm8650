@@ -9,11 +9,9 @@ jobs:
       - name: 初始化源码仓库
         run: |
           rm -rf kernel_workspace && mkdir kernel_workspace && cd kernel_workspace
-          # mkdir kernel_workspace/common
-          # cd kernel_workspace/common
+          mkdir common
+          cd kernel_workspace/common
           pwd
-          ls
-          cd ../.repo/manifests/patches/
           ls
 
       
