@@ -12,8 +12,7 @@ jobs:
           # mkdir kernel_workspace/common
           # cd kernel_workspace/common
           pwd
-          cd ../.local/patches/
-          ls
+
       
       - name: Get directory structure
         run: |
