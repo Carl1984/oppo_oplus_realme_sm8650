@@ -10,8 +10,11 @@ jobs:
         run: |
           rm -rf kernel_workspace && mkdir kernel_workspace && cd kernel_workspace
           mkdir common
-          cd kernel_workspace/common
           pwd
           ls
+          cd ..
+          pwd
+          ls
+          
 
       
