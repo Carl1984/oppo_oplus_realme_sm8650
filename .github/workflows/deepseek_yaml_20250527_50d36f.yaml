@@ -12,19 +12,8 @@ jobs:
           # mkdir kernel_workspace/common
           # cd kernel_workspace/common
           pwd
+          ls
+          cd ../.repo/manifests/patches/
+          ls
 
       
-      - name: Get directory structure
-        run: |
-          cd /
-          # 获取当前目录的树状结构
-          tree
-          
-          # 或者使用 find 命令
-          find . -type d
-          
-          # 或者使用 ls 命令递归列出文件
-          ls -R
-          
-          # 将结构保存到变量中
-          echo "STRUCTURE=$(tree)" >> $GITHUB_ENV
