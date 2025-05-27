@@ -96,10 +96,12 @@ jobs:
           cd kernel_workspace
           git clone https://github.com/ShirkNeko/susfs4ksu.git -b gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}
           git clone https://github.com/ShirkNeko/SukiSU_patch.git
+          git clone https://Carl1984/oppo_oplus_realme_sm8650.git
           cp ./susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch ./common/
           cp ./susfs4ksu/kernel_patches/fs/* ./common/fs/
           cp ./susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
           cp ./SukiSU_patch/hooks/new_hooks.patch ./common/
+          cp ./patches/* ./common/
           cd ./common
           patch -p1 < 50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch || true
           patch -p1 < new_hooks.patch
@@ -110,19 +112,18 @@ jobs:
           cp ../SukiSU_patch/69_hide_stuff.patch ./
           patch -p1 < 69_hide_stuff.patch
           
-      - name: 同步lz4patch
-        uses: actions/checkout@v4
-        with:
-          path: 'kernel_workspace'          # 本地存放路径
-          sparse-checkout: 'patches'  # 只检出特定目录
-          sparse-checkout-cone-mode: true
+      # - name: 同步lz4patch
+      #   uses: actions/checkout@v4
+      #   with:
+      #     path: 'kernel_workspace'          # 本地存放路径
+      #     sparse-checkout: 'patches'  # 只检出特定目录
+      #     sparse-checkout-cone-mode: true
           
       - name: 应用 lz4 patch  
         run: |
           cd kernel_workspace/common
-          cp ../patches/* ./
-          patch -p1 < ./001-lz4.patch
-          patch -p1 < ./002-zstd.patch
+          patch -p1 < 001-lz4.patch
+          patch -p1 < 002-zstd.patch
 
       - name: 应用 lz4k 补丁
         run: |
