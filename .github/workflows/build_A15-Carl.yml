@@ -74,7 +74,7 @@ jobs:
           git clone https://github.com/Carl1984/oppo_oplus_realme_sm8650.git
           cp ./oppo_oplus_realme_sm8650/patches/* ./common/
           rm -rf ./common/drivers/soc/oplus/*
-          cp ./oppo_oplus_realme_sm8650/Vendor/* ./
+          cp -r ./oppo_oplus_realme_sm8650/Vendor/* ./
           echo "正在去除 ABI 保护 & 去除 dirty 后缀..."
           rm common/android/abi_gki_protected_exports_* || true
           for f in common/scripts/setlocalversion; do
