@@ -16,6 +16,7 @@ jobs:
       
       - name: Get directory structure
         run: |
+          cd /
           # 获取当前目录的树状结构
           tree
           
