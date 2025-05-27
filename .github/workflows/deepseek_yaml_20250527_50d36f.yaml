@@ -5,7 +5,15 @@ jobs:
   get-structure:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+
+      - name: 初始化源码仓库
+        run: |
+          rm -rf kernel_workspace && mkdir kernel_workspace && cd kernel_workspace
+          mkdir common
+          cd kernel_workspace/common
+          pwd
+          cd ../../.local/patches/
+          ls
       
       - name: Get directory structure
         run: |
