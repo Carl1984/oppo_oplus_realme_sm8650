@@ -102,7 +102,7 @@ jobs:
           cp ./susfs4ksu/kernel_patches/fs/* ./common/fs/
           cp ./susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
           cp ./SukiSU_patch/hooks/new_hooks.patch ./common/
-          cp ./Carl1984/patches/* ./common/
+          cp ./oppo_oplus_realme_sm8650/patches/* ./common/
           cd ./common
           patch -p1 < 50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch || true
           patch -p1 < new_hooks.patch
