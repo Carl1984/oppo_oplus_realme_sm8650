@@ -57,6 +57,7 @@ jobs:
 
       - name: 安装配置环境依赖
         run: |
+          sudo apt-mark hold firefox
           sudo apt update && sudo apt upgrade -y
           sudo apt-get install curl bison flex make binutils dwarves git lld pahole zip perl make gcc python3 python-is-python3 bc libssl-dev libelf-dev -y
           sudo rm -rf ./llvm.sh
@@ -96,7 +97,7 @@ jobs:
           cd kernel_workspace
           git clone https://github.com/ShirkNeko/susfs4ksu.git -b gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}
           git clone https://github.com/ShirkNeko/SukiSU_patch.git
-          git clone https://Carl1984/oppo_oplus_realme_sm8650.git
+          git clone https://github.com/Carl1984/oppo_oplus_realme_sm8650.git
           cp ./susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch ./common/
           cp ./susfs4ksu/kernel_patches/fs/* ./common/fs/
           cp ./susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
