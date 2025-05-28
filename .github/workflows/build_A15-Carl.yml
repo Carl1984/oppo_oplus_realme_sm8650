@@ -102,7 +102,7 @@ jobs:
           rm -rf kernel_workspace && mkdir kernel_workspace && cd kernel_workspace
           echo "正在克隆源码仓库..."
           # git clone --depth=1 https://github.com/cctv18/android_kernel_common_oneplus_sm8650 -b oneplus/sm8650_v_15.0.0_oneplus12 common          
-          git clone --depth=1 "https://github.com/OnePlusOSS/android_kernel_common_oneplus_sm8650 -b oneplus/${{ github.event.inputs.basebranch }}" common
+          git clone --depth=1 https://github.com/OnePlusOSS/android_kernel_common_oneplus_sm8650 -b oneplus/"${{ github.event.inputs.basebranch }}" common
           git clone https://github.com/Carl1984/oppo_oplus_realme_sm8650.git
           cp ./oppo_oplus_realme_sm8650/patches/001-lz4.patch ./common/
           cp ./oppo_oplus_realme_sm8650/patches/002-zstd.patch ./common/
