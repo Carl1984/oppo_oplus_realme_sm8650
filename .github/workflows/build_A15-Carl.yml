@@ -365,17 +365,17 @@ jobs:
             ### 📱 欧加真 Android 15 SukiSU-Ultra SM8650 通用内核 | 构建信息
             - 内核版本号: ${{ env.FULL_VERSION }}
             - 编译时间: ${{ env.TIME_FORM }}
-            - 机型：欧加真骁龙8Gen3 6.1 Android 15内核通用（基于一加12 Android 15 版官方OKI源码）
+            - 机型：欧加真骁龙8Gen3 6.1 Android 15内核通用（基于${{ github.event.inputs.basebranch }} Android 15 版官方OKI源码）
             - 特性： SUSFS + VFS
             - KUS Type：${{ github.event.inputs.ksu_type }}
-            - KPM：${{ github.event.inputs.KPM }}
+            - KPM：${{ github.event.inputs.KPM }}   （KSU 为 SukiSU 时 ）
             - LZ4K支持：${{ github.event.inputs.lz4k_enable }}
             - 风驰内核支持：${{ github.event.inputs.scx_enable }}
             - 推荐系统：ColorOS 15 / RealmeUI 6.0
             - SukiSU管理器下载：[SukiSU-Ultra](https://github.com/ShirkNeko/SukiSU-Ultra/releases)
             - KSU Next 管理器：[KernelSU-Next](https://github.com/KernelSU-Next/KernelSU-Next/releases)
             ### ⏫️ 更新内容：
-            - 更新SukiSU Ultra至最新版本（${{ needs.build.outputs.ksuver }}）
+            - 更新KSU至最新版本（${{ needs.build.outputs.ksuver }}）
             - (预留)
             ### 📋 安装方法 | Installation Guide
             1. 若你的手机已经安装了第三方Recovery（如TWRP)，可下载对应机型的AnyKernel刷机包后进入Recovery模式，通过Recovery刷入刷机包后重启设备
