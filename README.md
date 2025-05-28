@@ -23,6 +23,8 @@
 ##### 
 - [ ] 原版KernelSU/KernelSU Next支持
 ##### 
+- [ ] 为非官方支持机型移植完整风驰内核支持
+##### 
 - [ ] LXC/Docker 功能支持
 ##### 
 - [ ] Wireguard/BBR 支持
