@@ -200,15 +200,20 @@ jobs:
           patch -p1 < 002-zstd.patch
 
       - name: 应用 lz4k 补丁
+        if: ${{github.event.inputs.lz4k_enable == 'true'}}
         run: |
-          if [[ "${{ github.event.inputs.lz4k_enable }}" == "true" ]]; then
-            cd kernel_workspace/common
+          if [[ "${{ github.event.inputs.ksu_type }}" == "ksun" ]]; then
+            cd kernel_workspace
+            git clone https://github.com/ShirkNeko/SukiSU_patch.git
+            cd ./common
             cp -r ../SukiSU_patch/other/zram/lz4k/include/linux/* ./include/linux/
             cp -r ../SukiSU_patch/other/zram/lz4k/lib/* ./lib
             cp -r ../SukiSU_patch/other/zram/lz4k/crypto/* ./crypto
             cp ../SukiSU_patch/other/zram/zram_patch/${{ env.KERNEL_VERSION }}/lz4kd.patch ./
-            patch -p1 -F 3 < lz4kd.patch || true
           fi
+          cd kernel_workspace/common
+          patch -p1 -F 3 < lz4kd.patch || true
+
           
       - name: 添加 SUSFS 配置设置
         run: |
