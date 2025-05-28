@@ -64,7 +64,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      ksuver: ${{ steps.ksu_version.outputs.ksuver }}
+      # ksuver: ${{ steps.ksu_version.outputs.ksuver }}
+      ksuver: ${{ env.KSUVER }}
     steps:
       - name: 最大化建筑空间
         uses: easimon/maximize-build-space@master
@@ -166,6 +167,7 @@ jobs:
           # KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+" 10200)
           KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+" 10198)
           echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
+          echo "ksuver=$KSU_VERSION" >> $GITHUB_OUTPUT
           sed -i "s/DKSU_VERSION=11998/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
 
       - name: 应用 SUSFS 修补程序 ksun
@@ -358,11 +360,14 @@ jobs:
             - 内核版本号: ${{ env.FULL_VERSION }}
             - 编译时间: ${{ env.TIME_FORM }}
             - 机型：欧加真骁龙8Gen3 6.1 Android 15内核通用（基于一加12 Android 15 版官方OKI源码）
-            - 特性：SukiSU Ultra + SUSFS + VFS + KPM
+            - 特性： SUSFS + VFS
+            - KUS Type：${{ github.event.inputs.ksu_type }}
+            - KPM：${{ github.event.inputs.KPM }}
             - LZ4K支持：${{ github.event.inputs.lz4k_enable }}
             - 风驰内核支持：${{ github.event.inputs.scx_enable }}
             - 推荐系统：ColorOS 15 / RealmeUI 6.0
             - SukiSU管理器下载：[SukiSU-Ultra](https://github.com/ShirkNeko/SukiSU-Ultra/releases)
+            - KSU Next 管理器：[KernelSU-Next](https://github.com/KernelSU-Next/KernelSU-Next/releases)
             ### ⏫️ 更新内容：
             - 更新SukiSU Ultra至最新版本（${{ needs.build.outputs.ksuver }}）
             - (预留)
