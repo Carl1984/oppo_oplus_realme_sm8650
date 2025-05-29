@@ -28,7 +28,7 @@ on:
         description: '是否安装风驰内核驱动'
         required: true
         type: choice
-        default: 'true'
+        default: 'false'
         options:
           - 'true'
           - 'false'
@@ -45,6 +45,7 @@ on:
           - sm8650_v_15.0.0_oneplus_ace5
           - sm8650_v_15.0.0_ace_3_pro
           - realme_GT5pro-AndroidV-common-source
+        default: 'realme_GT5pro-AndroidV-common-source'
       KPM:
         type: boolean
         description: "是否启用KPM？"
@@ -55,9 +56,15 @@ on:
         required: true
         type: choice
         options:
-          - ksun
-          - mksu
           - SukiUltra
+          - ksun
+      ksun_branch:
+        description: 'ksun_branch'
+        required: true
+        type: choice
+        options:
+          - "next-susfs"
+          - "next"
 
         
 
@@ -87,7 +94,8 @@ jobs:
           echo "Selected basebranch: ${{ github.event.inputs.basebranch }}"
           echo "Selected KPM: ${{ github.event.inputs.KPM }}"
           echo "Selected ksu_type: ${{ github.event.inputs.ksu_type }}"
-
+          echo "Selected ksun_branch: ${{ github.event.inputs.ksun_branch }}"
+          
       - name: 安装配置环境依赖
         run: |
           sudo apt-mark hold firefox
@@ -168,11 +176,15 @@ jobs:
         if: ${{github.event.inputs.ksu_type == 'ksun'}}
         run: |
           cd kernel_workspace
-          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next
-          # curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next-susfs
+          if [[ "${{ github.event.inputs.ksun_branch }}" == "next" ]]; then
+              curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next
+              BASE_VERSION=10200
+          else
+              curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next-susfs
+              BASE_VERSION=10198
+          fi
           cd ./KernelSU-Next
-          # KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+" 10200)
-          KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+" 10198)
+          KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+" BASE_VERSION)
           echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
           echo "ksuver=$KSU_VERSION" >> $GITHUB_OUTPUT
           sed -i "s/DKSU_VERSION=11998/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
@@ -193,8 +205,10 @@ jobs:
           
           # Apply patches
           cd ./KernelSU-Next
-          cp ../oppo_oplus_realme_sm8650/patches/0001-kernel-patch-susfs-v1.5.7-to-KernelSU-Next-v1.0.7.patch ./
-          patch -p1 --forward --fuzz=3 < 0001-kernel-patch-susfs-v1.5.7-to-KernelSU-Next-v1.0.7.patch || true
+          if [[ "${{ github.event.inputs.ksun_branch }}" == "next" ]]; then
+            cp ../oppo_oplus_realme_sm8650/patches/0001-kernel-patch-susfs-v1.5.7-to-KernelSU-Next-v1.0.7.patch ./
+            patch -p1 --forward --fuzz=3 < 0001-kernel-patch-susfs-v1.5.7-to-KernelSU-Next-v1.0.7.patch || true
+          fi
           cd ../common
           patch -p1 < 50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch || true
           # Replace next_hooks.patch with syscall_hooks.patch
@@ -377,13 +391,14 @@ jobs:
           tag_name: "${{ env.TAG_HEAD }}-${{ env.TIME }}"
           name: "${{ env.TAG_HEAD }}-${{ env.FULL_VERSION }}"
           body: |
-            ### 📱 欧加真 Android 15 SukiSU-Ultra SM8650 通用内核 | 构建信息
+            ### 📱 欧加真 Android 15 KSU SM8650 通用内核 | 构建信息
             - 内核版本号: ${{ env.FULL_VERSION }}
             - 编译时间: ${{ env.TIME_FORM }}
             - 机型：欧加真骁龙8Gen3 6.1 Android 15内核通用（基于${{ github.event.inputs.basebranch }} Android 15 版官方OKI源码）
             - 特性： SUSFS + VFS
             - KUS Type：${{ github.event.inputs.ksu_type }}
             - KPM：${{ github.event.inputs.KPM }}   （KSU 为 SukiSU 时 ）
+            - KPM：${{ github.event.inputs.ksun_branch }}   （KSU 为 KSU Next 时 ）
             - LZ4K支持：${{ github.event.inputs.lz4k_enable }}
             - 风驰内核支持：${{ github.event.inputs.scx_enable }}
             - 推荐系统：ColorOS 15 / RealmeUI 6.0
