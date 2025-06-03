@@ -21,7 +21,7 @@ on:
         description: '是否安装 LZ4K 补丁'
         required: true
         type: choice
-        default: 'true'
+        default: 'false'
         options:
           - 'true'
           - 'false'
@@ -46,7 +46,7 @@ on:
           - sm8650_v_15.0.0_oneplus_ace5
           - sm8650_v_15.0.0_ace_3_pro
           - realme_GT5pro-AndroidV-common-source
-        default: 'realme_GT5pro-AndroidV-common-source'
+        default: 'sm8650_v_15.0.0_oneplus_ace5'
       KPM:
         type: boolean
         description: "是否启用KPM？"
@@ -129,9 +129,9 @@ jobs:
           #   git clone --depth=1 https://github.com/OnePlusOSS/android_kernel_common_oneplus_sm8650 -b oneplus/"${{ github.event.inputs.basebranch }}" common
           # fi  
           
-          # git clone https://github.com/Carl1984/oppo_oplus_realme_sm8650.git
-          # cp ./oppo_oplus_realme_sm8650/patches/001-lz4.patch ./common/
-          # cp ./oppo_oplus_realme_sm8650/patches/002-zstd.patch ./common/
+          git clone https://github.com/Carl1984/oppo_oplus_realme_sm8650.git
+          cp ./oppo_oplus_realme_sm8650/patches/001-lz4.patch ./common/
+          cp ./oppo_oplus_realme_sm8650/patches/002-zstd.patch ./common/
           
           # rm -rf ./common/drivers/soc/oplus/*
           # cp -r ./oppo_oplus_realme_sm8650/Vendor/* ./common/drivers/soc/oplus/
