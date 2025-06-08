@@ -130,9 +130,10 @@ jobs:
           # fi  
           
           git clone https://github.com/Carl1984/oppo_oplus_realme_sm8650.git
-          cp ./oppo_oplus_realme_sm8650/patches/001-lz4.patch ./common/
+          #cp ./oppo_oplus_realme_sm8650/patches/001-lz4.patch ./common/
           cp ./oppo_oplus_realme_sm8650/patches/002-zstd.patch ./common/
-          
+          cp ./oppo_oplus_realme_sm8650/new/001-lz4.patch ./common/
+          cp ./oppo_oplus_realme_sm8650/new/lz4armv8.S ./common/
           # rm -rf ./common/drivers/soc/oplus/*
           # cp -r ./oppo_oplus_realme_sm8650/Vendor/* ./common/drivers/soc/oplus/
           # rm -rf ./common/kernel/locking/locking_main.h
