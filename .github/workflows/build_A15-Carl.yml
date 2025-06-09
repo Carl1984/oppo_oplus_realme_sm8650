@@ -59,6 +59,7 @@ on:
         options:
           - SukiUltra
           - ksun
+        default: 'SukiUltra'
       ksun_branch:
         description: 'ksun_branch'
         required: true
@@ -66,6 +67,7 @@ on:
         options:
           - "next-susfs"
           - "next"
+        default: 'next'
 
         
 
@@ -233,8 +235,7 @@ jobs:
         run: |
           cd kernel_workspace/common
           #patch -p1 < 001-lz4.patch
-          git apply --check 001-lz4.patch
-          git apply -p1 < 001-lz4.patch
+          git apply --verbose -p1 < 001-lz4.patch --verbose
           patch -p1 < 002-zstd.patch
 
           
