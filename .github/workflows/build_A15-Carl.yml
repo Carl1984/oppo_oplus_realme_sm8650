@@ -233,6 +233,7 @@ jobs:
         run: |
           cd kernel_workspace/common
           #patch -p1 < 001-lz4.patch
+          git apply --check 001-lz4.patch
           git apply -p1 < 001-lz4.patch
           patch -p1 < 002-zstd.patch
 
