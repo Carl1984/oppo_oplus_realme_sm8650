@@ -6,16 +6,13 @@ env:
   FEIL: 'oppo+oplus+realme'
   ANDROID_VERSION: 'android14'
   KERNEL_VERSION: '6.1'
-  # KERNEL_NAME: 'android14-11-o-g4c9c8979e2a7'
   KERNEL_NAME: 'android14-11-o-g239209decfd3'
   KERNELSU_VARIANT: 'SukiSU-Ultra'
   KERNELSU_BRANCH: 'susfs-dev'
 
 on:
   workflow_dispatch:
-  # 取消此处注释代码可开启每日定时编译
-#  schedule:
-#    - cron: '0 23 * * *'  # UTC时间23点（北京时间次日7点）
+
     inputs:
       lz4k_enable:
         description: '是否安装 LZ4K 补丁'
@@ -418,8 +415,8 @@ jobs:
             - 内核版本号: ${{ env.FULL_VERSION }}
             - 编译时间: ${{ env.TIME_FORM }}
             - 机型：欧加真骁龙8Gen3 6.1 Android 15内核通用（基于${{ github.event.inputs.basebranch }} Android 15 版官方OKI源码）
-            - 特性： SUSFS + VFS
-            - KUS Type：${{ github.event.inputs.ksu_type }}
+            - 特性：
+            - KUS Type：${{ github.event.inputs.ksu_type }}   
             - KPM：${{ github.event.inputs.KPM }}   （KSU 为 SukiSU 时 ）
             - KPM：${{ github.event.inputs.ksun_branch }}   （KSU 为 KSU Next 时 ）
             - LZ4K支持：${{ github.event.inputs.lz4k_enable }}
@@ -429,12 +426,9 @@ jobs:
             - KSU Next 管理器：[KernelSU-Next](https://github.com/KernelSU-Next/KernelSU-Next/releases)
             ### ⏫️ 更新内容：
             - 更新KSU至最新版本（${{ needs.build.outputs.ksuver }}）
-            - (预留)
-            ### 📋 安装方法 | Installation Guide
-            1. 若你的手机已经安装了第三方Recovery（如TWRP)，可下载对应机型的AnyKernel刷机包后进入Recovery模式，通过Recovery刷入刷机包后重启设备
-            2. 若你的手机之前已有 root 权限，可在手机上安装[HorizonKernelFlasher](https://github.com/libxzr/HorizonKernelFlasher/releases)，在HorizonKernelFlasher中刷入AnyKernel刷机包并重启
-            3. 若你之前已刷入SukiSU Ultra内核，且SukiSU Ultra管理器已更新至最新版本，可在SukiSU Ultra管理器中直接刷入AnyKernel刷机包并重启
-            ※※※刷写内核有风险，为防止出现意外导致手机变砖，在刷入内核前请务必用[KernelFlasher](https://github.com/capntrips/KernelFlasher)等软件备份boot等关键启动分区!※※※
+            - KUS Type 为None 的内核 无root 支持（请使用LKM模式， 仅更新lz4）， 不为None的内核 支持 SUSFS + VFS
+            - 升级LZ4 到 1.10
+
           draft: false
           prerelease: false
           files: |
