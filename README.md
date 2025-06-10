@@ -37,3 +37,5 @@
 - GKI 内核构建脚本：[WildKernels/GKI_KernelSU_SUSFS](https://github.com/WildKernels/GKI_KernelSU_SUSFS)
 - 本地化内核构建脚本：[Suxiaoqinx/kernel_manifest_OnePlus_Sukisu_Ultra](https://github.com/Suxiaoqinx/kernel_manifest_OnePlus_Sukisu_Ultra)
 - 风驰内核源码：[HanKuCha/sched_ext](https://github.com/HanKuCha/sched_ext)
+- 编译代码：[cctv18/oppo_oplus_realme_sm8650](https://github.com/cctv18/oppo_oplus_realme_sm8650)
+- LZ4升级补丁：[ferstar/kernel_manifest](https://github.com/ferstar/kernel_manifest)
