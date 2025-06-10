@@ -5,7 +5,7 @@
 ## 实现功能
 - [x] 欧加真 SM8650 通用A14 OKI内核（基于一加12 6.1.57 A14官方内核源码，适用于ColorOS 14/RealmeUI 5.0）
 ##### 
-- [x] 欧加真 SM8650 通用A15 OKI内核（基于一加12 6.1.75 A15官方内核源码，适用于ColorOS 15/RealmeUI 6.0）
+- [x] 欧加真 SM8650 通用A15 OKI内核（基于一加SM8650代码 6.1.75 A15官方内核源码，适用于ColorOS 15/RealmeUI 6.0）
 ##### 
 - [x] KernelSU Next支持
 
