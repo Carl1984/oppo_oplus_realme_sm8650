@@ -39,3 +39,6 @@
 - 风驰内核源码：[HanKuCha/sched_ext](https://github.com/HanKuCha/sched_ext)
 - 编译代码：[cctv18/oppo_oplus_realme_sm8650](https://github.com/cctv18/oppo_oplus_realme_sm8650)
 - LZ4升级补丁：[ferstar/kernel_manifest](https://github.com/ferstar/kernel_manifest)
+- Oplus源码：[oneplus/sm8650_v_15.0.0_oneplus_ace5](https://github.com/OnePlusOSS/android_kernel_common_oneplus_sm8650/tree/oneplus/sm8650_v_15.0.0_oneplus_ace5)
+- Oplus源码：[oneplus/sm8650_v_15.0.0_oneplus_ace5](https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm8650/tree/oneplus/sm8650_v_15.0.0_oneplus_ace5)
+
