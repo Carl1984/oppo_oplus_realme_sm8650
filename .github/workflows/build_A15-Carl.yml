@@ -51,7 +51,7 @@ on:
         type: boolean
         description: "是否启用KPM？"
         required: true
-        default: true
+        default: false
       ksu_type:
         description: '要用的ksu'
         required: true
