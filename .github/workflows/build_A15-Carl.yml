@@ -59,6 +59,7 @@ on:
         options:
           - SukiUltra
           - ksun
+          - None
         default: 'SukiUltra'
       ksun_branch:
         description: 'ksun_branch'
@@ -121,21 +122,20 @@ jobs:
           git clone --depth=1 https://github.com/OnePlusOSS/android_kernel_common_oneplus_sm8650 -b oneplus/"${{ github.event.inputs.basebranch }}" common
           echo ">>> 初始化仓库完成"
           
-          # rm -rf kernel_workspace && mkdir kernel_workspace && cd kernel_workspace
-          # echo "正在克隆源码仓库..."
-          # # git clone --depth=1 https://github.com/cctv18/android_kernel_common_oneplus_sm8650 -b oneplus/sm8650_v_15.0.0_oneplus12 common         
-          
-          # if [[ "${{ github.event.inputs.basebranch }}" == "realme_GT5pro-AndroidV-common-source" ]]; then
-          #   git clone --depth=1 https://github.com/realme-kernel-opensource/realme_GT5pro-AndroidV-common-source.git common
-          # else
-          #   git clone --depth=1 https://github.com/OnePlusOSS/android_kernel_common_oneplus_sm8650 -b oneplus/"${{ github.event.inputs.basebranch }}" common
-          # fi  
           
           git clone https://github.com/Carl1984/oppo_oplus_realme_sm8650.git
-          #cp ./oppo_oplus_realme_sm8650/patches/001-lz4.patch ./common/
-          cp ./oppo_oplus_realme_sm8650/patches/002-zstd.patch ./common/
+          
+          #lz4 1.9.4
+          #cp ./oppo_oplus_realme_sm8650/patches/001-lz4.patch ./common/        
+
+          #lz4 1.10
           cp ./oppo_oplus_realme_sm8650/new/001-lz4.patch ./common/
           cp ./oppo_oplus_realme_sm8650/new/lz4armv8.S ./common/
+          
+          
+          cp ./oppo_oplus_realme_sm8650/patches/002-zstd.patch ./common/
+
+          #不挂载vendor，只补全链接文件时使用
           # rm -rf ./common/drivers/soc/oplus/*
           # cp -r ./oppo_oplus_realme_sm8650/Vendor/* ./common/drivers/soc/oplus/
           # rm -rf ./common/kernel/locking/locking_main.h
@@ -252,6 +252,7 @@ jobs:
 
           
       - name: 添加 SUSFS 配置设置
+        if: ${{github.event.inputs.ksu_type == 'SukiUltra' || github.event.inputs.ksu_type == 'ksun' }}
         run: |
           cd kernel_workspace
           echo "CONFIG_KSU=y" >> ./common/arch/arm64/configs/gki_defconfig
@@ -295,6 +296,13 @@ jobs:
           #禁用 defconfig 检查
           sed -i 's/check_defconfig//' ./common/build.config.gki
 
+      - name: 禁用 defconfig 检查
+        if: ${{github.event.inputs.ksu_type == 'None' }}
+        run: |
+          cd kernel_workspace
+          #禁用 defconfig 检查
+          sed -i 's/check_defconfig//' ./common/build.config.gki
+          
       - name: 添加制作名称
         run: |
           cd kernel_workspace
