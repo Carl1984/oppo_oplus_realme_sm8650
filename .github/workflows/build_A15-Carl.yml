@@ -327,7 +327,7 @@ jobs:
           fi
           cd common
           # make -j$(nproc --all) LLVM=-20 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnuabeihf- CC=clang LD=ld.lld HOSTCC=clang HOSTLD=ld.lld O=out KCFLAGS+=-Wno-error gki_defconfig all
-          make -j$(nproc --all) LLVM=1 LLVM_IAS=1 ARCH=arm64 SUBARCH=arm64 CC=ccache clang CXX=ccache clang++  O=out  CONFIG_LTO_CLANG=y  CONFIG_LTO_CLANG_THIN=y CONFIG_LTO_CLANG_FULL=n CONFIG_LTO_NONE=n gki_defconfig all
+          make -j$(nproc --all) LLVM=1 LLVM_IAS=1 ARCH=arm64 SUBARCH=arm64 CC=clang O=out CONFIG_LTO_CLANG=y  CONFIG_LTO_CLANG_THIN=y CONFIG_LTO_CLANG_FULL=n CONFIG_LTO_NONE=n gki_defconfig all
           echo "内核编译完成！"
          
       - name: 应用KPMpatch_linux并修补内核
