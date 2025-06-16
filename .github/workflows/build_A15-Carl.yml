@@ -101,11 +101,12 @@ jobs:
         run: |
           sudo apt-mark hold firefox
           sudo apt update && sudo apt upgrade -y
-          sudo apt-get install curl bison flex make binutils dwarves git lld pahole zip perl make gcc python3 python-is-python3 bc libssl-dev libelf-dev -y
-          sudo rm -rf ./llvm.sh
-          sudo wget https://apt.llvm.org/llvm.sh
-          sudo chmod +x llvm.sh
-          sudo sudo ./llvm.sh 20 all
+          # sudo apt-get install curl bison flex make binutils dwarves git lld pahole zip perl make gcc python3 python-is-python3 bc libssl-dev libelf-dev -y
+          sudo apt-get install curl bison flex make binutils dwarves git lld pahole zip perl make gcc python3 python-is-python3 bc libssl-dev libelf-dev ccache -y
+          # sudo rm -rf ./llvm.sh
+          # sudo wget https://apt.llvm.org/llvm.sh
+          # sudo chmod +x llvm.sh
+          # sudo sudo ./llvm.sh 20 all
 
       - name: 初始化源码仓库
         run: |
@@ -148,7 +149,15 @@ jobs:
             sed -i 's/ -dirty//g' "$f"
             sed -i '$i res=$(echo "$res" | sed '\''s/-dirty//g'\'')' "$f"
           done
+          
+          ###############################测试代码#######################################################################
+          cd ..
+          mkdir toolchains
+          cd kernel_workspace
+          git clone --depth 1 https://gitlab.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-r547379.git  clang
+          export PATH="/toolchains/clang/bin:$PATH"
 
+          
       - name: 添加 SukiSU-Ultra
         if: ${{github.event.inputs.ksu_type == 'SukiUltra'}}
         id: ksu_version
@@ -327,8 +336,8 @@ jobs:
           fi
           cd common
           # make -j$(nproc --all) LLVM=-20 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnuabeihf- CC=clang LD=ld.lld HOSTCC=clang HOSTLD=ld.lld O=out KCFLAGS+=-Wno-error gki_defconfig all
-          # make -j$(nproc --all) LLVM=1 LLVM_IAS=1 ARCH=arm64 SUBARCH=arm64 CC=clang O=out CONFIG_LTO_CLANG=y  CONFIG_LTO_CLANG_THIN=y CONFIG_LTO_CLANG_FULL=n CONFIG_LTO_NONE=n gki_defconfig all
-          make -j$(nproc --all) LLVM=-20 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- SUBARCH=arm64 CC=clang LD=ld.lld HOSTCC=clang HOSTLD=ld.lld O=out KCFLAGS+=-Wno-error gki_defconfig all
+          # make -j$(nproc --all) LLVM=-20 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- SUBARCH=arm64 CC=clang LD=ld.lld HOSTCC=clang HOSTLD=ld.lld O=out KCFLAGS+=-Wno-error gki_defconfig all
+          make -j"$(nproc --all)" LLVM=1 LLVM_IAS=1 ARCH=arm64 SUBARCH=arm64  CROSS_COMPILE=aarch64-linux-gnu- CC="clang" O=out CONFIG_LTO_CLANG=y CONFIG_LTO_CLANG_THIN=y CONFIG_LTO_CLANG_FULL=n CONFIG_LTO_NONE=n gki_defconfig all 
           echo "内核编译完成！"
          
       - name: 应用KPMpatch_linux并修补内核
