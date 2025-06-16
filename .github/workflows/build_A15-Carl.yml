@@ -159,7 +159,8 @@ jobs:
           echo $PATH
           export PATH="$PWD/bin:$PATH"
           echo $PATH
-
+          export CLANG_TRIPLE="aarch64-linux-gnu-"
+          export CROSS_COMPILE="${CLANG_TRIPLE}"
           
       - name: 添加 SukiSU-Ultra
         if: ${{github.event.inputs.ksu_type == 'SukiUltra'}}
