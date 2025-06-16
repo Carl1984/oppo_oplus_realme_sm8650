@@ -156,7 +156,7 @@ jobs:
           cd toolchains
           git clone --depth 1 https://gitlab.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-r547379.git  clang
           echo $PATH
-          export PATH="/toolchains/clang/bin:$PATH"
+          export PATH="$PWD/clang/bin:$PATH"
           echo $PATH
 
           
