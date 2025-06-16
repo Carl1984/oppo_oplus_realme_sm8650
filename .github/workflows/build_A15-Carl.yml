@@ -153,9 +153,11 @@ jobs:
           ###############################测试代码#######################################################################
           cd ..
           mkdir toolchains
-          cd kernel_workspace
+          cd toolchains
           git clone --depth 1 https://gitlab.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-r547379.git  clang
+          echo $PATH
           export PATH="/toolchains/clang/bin:$PATH"
+          echo $PATH
 
           
       - name: 添加 SukiSU-Ultra
