@@ -315,12 +315,12 @@ jobs:
           #禁用 defconfig 检查
           sed -i 's/check_defconfig//' ./common/build.config.gki
 
-      - name: 禁用 defconfig 检查
-        if: ${{github.event.inputs.ksu_type == 'None' }}
-        run: |
-          cd kernel_workspace
-          #禁用 defconfig 检查
-          sed -i 's/check_defconfig//' ./common/build.config.gki
+      # - name: 禁用 defconfig 检查
+      #   if: ${{github.event.inputs.ksu_type == 'None' }}
+      #   run: |
+      #     cd kernel_workspace
+      #     #禁用 defconfig 检查
+      #     sed -i 's/check_defconfig//' ./common/build.config.gki
           
       - name: 添加制作名称
         run: |
