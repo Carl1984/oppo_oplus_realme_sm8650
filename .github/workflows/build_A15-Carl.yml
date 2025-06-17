@@ -445,7 +445,7 @@ jobs:
             - 特性：
             - KUS Type：${{ github.event.inputs.ksu_type }}   
             - KPM：${{ github.event.inputs.KPM }}   （KSU 为 SukiSU 时 ）
-            - KPM：${{ github.event.inputs.ksun_branch }}   （KSU 为 KSU Next 时 ）
+            - ksun_branch：${{ github.event.inputs.ksun_branch }}   （KSU 为 KSU Next 时 ）
             - LZ4K支持：${{ github.event.inputs.lz4k_enable }}
             - 风驰内核支持：${{ github.event.inputs.scx_enable }}
             - 推荐系统：ColorOS 15 / RealmeUI 6.0
