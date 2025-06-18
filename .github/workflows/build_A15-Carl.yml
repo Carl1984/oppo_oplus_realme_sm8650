@@ -154,13 +154,15 @@ jobs:
           cd ..
           mkdir toolchains
           cd toolchains
-          git clone --depth 1 https://gitlab.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-r547379.git
-          cd android_prebuilts_clang_host_linux-x86_clang-r547379
-          # echo $PATH
-          # export PATH="$PWD/bin:$PATH"
-          # echo $PATH
-          # export CLANG_TRIPLE="aarch64-linux-gnu-"
-          # export CROSS_COMPILE="${CLANG_TRIPLE}"
+          # git clone --depth 1 https://gitlab.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-r547379.git
+          # cd android_prebuilts_clang_host_linux-x86_clang-r547379
+          mkdir neutron-clang
+          cd neutron-clang
+          curl -LO "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman"
+          chmod +x antman
+          ./antman -S
+          install_dependencies
+          
           
       - name: 添加 SukiSU-Ultra
         if: ${{github.event.inputs.ksu_type == 'SukiUltra'}}
@@ -340,7 +342,8 @@ jobs:
            
       - name: 构建内核
         run: |
-          export PATH="$GITHUB_WORKSPACE/toolchains/android_prebuilts_clang_host_linux-x86_clang-r547379/bin:$PATH"
+          # export PATH="$GITHUB_WORKSPACE/toolchains/android_prebuilts_clang_host_linux-x86_clang-r547379/bin:$PATH"
+          export PATH="$GITHUB_WORKSPACE/toolchains/neutron-clang/bin:$PATH"
           export PATH="/usr/lib/ccache:$PATH"
           echo $PATH
           export CLANG_TRIPLE="aarch64-linux-gnu-"
@@ -363,7 +366,8 @@ jobs:
         run: |
           cd kernel_workspace/common/out/arch/arm64/boot
           #curl -LO https://github.com/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases/download/0.11-beta/patch_linux
-          curl -LO https://github.com/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases/download/0.12.0/patch_linux
+          # curl -LO https://github.com/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases/download/0.12.0/patch_linux
+          curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch_linux
           chmod +x patch_linux
           ./patch_linux
           rm -f Image
