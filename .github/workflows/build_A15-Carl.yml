@@ -161,7 +161,7 @@ jobs:
           curl -LO "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman"
           chmod +x antman
           ./antman -S
-          install_dependencies
+
           
           
       - name: 添加 SukiSU-Ultra
