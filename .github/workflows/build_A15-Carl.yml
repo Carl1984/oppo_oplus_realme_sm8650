@@ -42,6 +42,7 @@ on:
           - sm8650_v_15.0.0_oneplus12
           - sm8650_v_15.0.0_oneplus_ace5
           - sm8650_v_15.0.0_ace_3_pro
+          - sm8650_v_15.0.0_oneplus_13r
           - realme_GT5pro-AndroidV-common-source
         default: 'sm8650_v_15.0.0_oneplus_ace5'
       KPM:
