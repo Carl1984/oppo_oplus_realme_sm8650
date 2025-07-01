@@ -525,7 +525,7 @@ jobs:
             ### 📱 欧加真 Android 15 KSU SM8650 通用内核 | 构建信息
             - 内核版本号: ${{ env.FULL_VERSION }}
             - 编译时间: ${{ env.TIME_FORM }}
-            - 机型：欧加真骁龙8Gen3 6.1 Android 15内核通用（基于$${{ needs.build.outputs.sourcecode }} 的 Android 15 OKI源码）
+            - 机型：欧加真骁龙8Gen3 6.1 Android 15内核通用（基于${{ needs.build.outputs.sourcecode }} 的 Android 15 OKI源码）
             - 特性：
             - KUS Type：${{ github.event.inputs.ksu_type }}   
             - KPM：${{ github.event.inputs.KPM }}   （KSU 为 SukiSU 时 ）
