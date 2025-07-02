@@ -85,7 +85,14 @@ on:
           - "next-susfs"
           - "next"
         default: 'next'
-
+      hook_method:
+        description: hook模式(大部分情况manual即可，少数需切换sus su模式的场景才需要kprobes钩子)
+        required: true
+        type: choice
+        default: 'manual'
+        options:
+          - 'manual'
+          - 'kprobes'
         
 
 jobs:
@@ -117,13 +124,14 @@ jobs:
           echo "Selected ksun_branch: ${{ github.event.inputs.ksun_branch }}"
           echo "Selected bbr_enable: ${{ github.event.inputs.bbr_enable }}"
           echo "Selected ssg_enable: ${{ github.event.inputs.ssg_enable }}"
+          echo "Selected hook_method: ${{ github.event.inputs.hook_method }}"
           
       - name: 安装配置环境依赖
         run: |
           sudo apt-mark hold firefox
           sudo apt update && sudo apt upgrade -y
-          # sudo apt-get install curl bison flex make binutils dwarves git lld pahole zip perl make gcc python3 python-is-python3 bc libssl-dev libelf-dev -y
           sudo apt-get install curl bison flex make binutils dwarves git lld pahole zip perl make gcc python3 python-is-python3 bc libssl-dev libelf-dev ccache -y
+          
           # sudo rm -rf ./llvm.sh
           # sudo wget https://apt.llvm.org/llvm.sh
           # sudo chmod +x llvm.sh
@@ -142,6 +150,7 @@ jobs:
             git clone --depth=1 https://github.com/cctv18/android_kernel_common_oneplus_sm8650 -b oneplus/sm8650_v_15.0.0_oneplus12_6.1.118 common
             echo "sourcecode=cctv18sm8650_v_15.0.0_oneplus12_6.1.118" >> $GITHUB_OUTPUT
           else
+            echo "正在克隆源码原版仓库..."
             git clone --depth 1 https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm8650/ -b oneplus/"${{ github.event.inputs.basebranch }}"  vendor
             mv vendor/* ..
             git clone --depth=1 https://github.com/OnePlusOSS/android_kernel_common_oneplus_sm8650 -b oneplus/"${{ github.event.inputs.basebranch }}" common            
@@ -150,14 +159,11 @@ jobs:
           fi
           echo ">>> 初始化仓库完成"
           git clone https://github.com/Carl1984/oppo_oplus_realme_sm8650.git
-          
-          #lz4 1.9.4
-          #cp ./oppo_oplus_realme_sm8650/patches/001-lz4.patch ./common/        
+
 
           #lz4 1.10
           cp ./oppo_oplus_realme_sm8650/new/001-lz4.patch ./common/
-          cp ./oppo_oplus_realme_sm8650/new/lz4armv8.S ./common/
-          
+          cp ./oppo_oplus_realme_sm8650/new/lz4armv8.S ./common/         
           
           cp ./oppo_oplus_realme_sm8650/patches/002-zstd.patch ./common/
 
@@ -184,6 +190,7 @@ jobs:
           cd toolchains
           git clone --depth 1 https://gitlab.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-r547379.git
           cd android_prebuilts_clang_host_linux-x86_clang-r547379
+          
           # mkdir neutron-clang
           # cd neutron-clang
           # curl -LO "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman"
@@ -214,12 +221,10 @@ jobs:
           cp ./susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch ./common/
           cp ./susfs4ksu/kernel_patches/fs/* ./common/fs/
           cp ./susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
-          #cp ./SukiSU_patch/hooks/new_hooks.patch ./common/
           cp ./SukiSU_patch/hooks/syscall_hooks.patch ./common/
           cd ./common
           patch -p1 < 50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch || true
-          #patch -p1 < new_hooks.patch
-          patch -p1 < syscall_hooks.patch
+          patch -p1 < syscall_hooks.patch || true
 
       - name: 应用 Hide Stuff 修补程序
         if: ${{github.event.inputs.ksu_type == 'SukiUltra'}}
@@ -276,7 +281,6 @@ jobs:
       - name: 应用 lz4 patch  
         run: |
           cd kernel_workspace/common
-          #patch -p1 < 001-lz4.patch
           git apply --verbose -p1 < 001-lz4.patch --verbose
           patch -p1 < 002-zstd.patch
 
@@ -303,13 +307,31 @@ jobs:
               if [[ "${{ github.event.inputs.KPM }}" == "true" ]]; then
                 echo "CONFIG_KPM=y" >> ./common/arch/arm64/configs/gki_defconfig
               fi
-              echo "CONFIG_KSU_MANUAL_HOOK=y" >> ./common/arch/arm64/configs/gki_defconfig
+                if [ "${{ github.event.inputs.hook_method }}" == "kprobes" ]; then
+                  echo "正在开启kprobes钩子..."
+                  echo "CONFIG_KSU_SUSFS_SUS_SU=y" >> ./common/arch/arm64/configs/gki_defconfig
+                  echo "CONFIG_KSU_MANUAL_HOOK=n" >> ./common/arch/arm64/configs/gki_defconfig
+                  echo "CONFIG_KSU_KPROBES_HOOK=y" >> ./common/arch/arm64/configs/gki_defconfig
+                else
+                  echo "正在开启manual钩子..."
+                  echo "CONFIG_KSU_MANUAL_HOOK=y" >> ./common/arch/arm64/configs/gki_defconfig
+                  echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> ./common/arch/arm64/configs/gki_defconfig
+                fi
             fi
             if [[ "${{ github.event.inputs.ksu_type }}" == "ksun" ]]; then
-              echo "CONFIG_KSU_WITH_KPROBES=n" >> ./common/arch/arm64/configs/gki_defconfig
-              echo "CONFIG_KSU_KPROBES_HOOK=n" >> ./common/arch/arm64/configs/gki_defconfig
+
+              if [ "${{ github.event.inputs.hook_method }}" == "kprobes" ]; then
+                echo "正在开启kprobes钩子..."
+                echo "CONFIG_KSU_SUSFS_SUS_SU=y" >> ./common/arch/arm64/configs/gki_defconfig
+                echo "CONFIG_KSU_WITH_KPROBES=y" >> ./common/arch/arm64/configs/gki_defconfig
+                echo "CONFIG_KSU_KPROBES_HOOK=y" >> ./common/arch/arm64/configs/gki_defconfig
+              else
+                echo "正在开启manual钩子..."
+                echo "CONFIG_KSU_WITH_KPROBES=n" >> ./common/arch/arm64/configs/gki_defconfig
+                echo "CONFIG_KSU_KPROBES_HOOK=n" >> ./common/arch/arm64/configs/gki_defconfig
+                echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> ./common/arch/arm64/configs/gki_defconfig
+              fi                
             fi
-            echo "CONFIG_KSU_SUSFS_SUS_SU=n" >> ./common/arch/arm64/configs/gki_defconfig
             echo "CONFIG_KSU_SUSFS=y" >> ./common/arch/arm64/configs/gki_defconfig
             echo "CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT=y" >> ./common/arch/arm64/configs/gki_defconfig
             echo "CONFIG_KSU_SUSFS_SUS_PATH=y" >> ./common/arch/arm64/configs/gki_defconfig
