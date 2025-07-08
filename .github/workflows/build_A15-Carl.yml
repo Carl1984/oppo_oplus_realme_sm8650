@@ -156,7 +156,7 @@ jobs:
             git clone --depth 1 https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm8650/ -b oneplus/"${{ github.event.inputs.basebranch }}"  vendor
             mv vendor/* ..
             git clone --depth=1 https://github.com/OnePlusOSS/android_kernel_common_oneplus_sm8650 -b oneplus/"${{ github.event.inputs.basebranch }}" common            
-            echo "sourcecode==${{ github.event.inputs.basebranch}}" >> $GITHUB_OUTPUT
+            echo "sourcecode=${{ github.event.inputs.basebranch}}" >> $GITHUB_OUTPUT
 
           fi
           echo ">>> 初始化仓库完成"
@@ -528,7 +528,7 @@ jobs:
             echo "FULL_VERSION=$FULL_VERSION" >> $GITHUB_ENV
             export FULL_VERSION=$FULL_VERSION
           else
-            FULL_VERSION=${{ format('{0}.118-{1}', env.KERNEL_VERSION, env.KERNEL_NAME) }}
+            FULL_VERSION=${{ format('{0}.75-{1}', env.KERNEL_VERSION, env.KERNEL_NAME) }}
             echo "FULL_VERSION=$FULL_VERSION" >> $GITHUB_ENV
             export FULL_VERSION=$FULL_VERSION
           fi
