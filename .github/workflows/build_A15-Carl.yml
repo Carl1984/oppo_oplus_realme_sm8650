@@ -537,7 +537,7 @@ jobs:
           TIME_FORM="$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')"
           echo "TIME=$TIME" >> $GITHUB_ENV
           echo "TIME_FORM=$TIME_FORM" >> $GITHUB_ENV
-          TAG_HEAD="OPPO+OPlus+Realme-A15-build"
+          TAG_HEAD="A15-build"
           echo "TAG_HEAD=$TAG_HEAD" >> $GITHUB_ENV
          
       - name: 创建发布
