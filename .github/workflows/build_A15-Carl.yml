@@ -6,8 +6,8 @@ env:
   FEIL: 'oppo+oplus+realme'
   ANDROID_VERSION: 'android14'
   KERNEL_VERSION: '6.1'
-  # KERNEL_NAME: 'android14-11-o-g6567d1f5c5e2'  #ace5 6.1.118
-  KERNEL_NAME: 'android14-11-o-g239209decfd3'  #ace5 6.1.75
+  KERNEL_NAME: 'android14-11-o-g6567d1f5c5e2'  #ace5 6.1.118
+  # KERNEL_NAME: 'android14-11-o-g239209decfd3'  #ace5 6.1.75
   #KERNEL_NAME: 'android14-11-o-gb3c173388f97' #13R
   KERNELSU_VARIANT: 'SukiSU-Ultra'
   KERNELSU_BRANCH: 'susfs-dev'
@@ -149,8 +149,8 @@ jobs:
 
           if [[ "${{ github.event.inputs.bbr_enable }}" == "true" || "${{ github.event.inputs.bbr_enable }}" == "default" || "${{ github.event.inputs.ssg_enable }}" == "true" ]]; then
             echo "正在克隆源码仓库...使用cctv18修改后的一加12源码"
-            # git clone --depth=1 https://github.com/cctv18/android_kernel_common_oneplus_sm8650 -b oneplus/sm8650_v_15.0.0_oneplus12_6.1.118 common
-            git clone --depth=1 https://github.com/cctv18/android_kernel_common_oneplus_sm8650 -b oneplus/sm8650_v_15.0.0_oneplus12 common
+            git clone --depth=1 https://github.com/cctv18/android_kernel_common_oneplus_sm8650 -b oneplus/sm8650_v_15.0.0_oneplus12_6.1.118 common
+            # git clone --depth=1 https://github.com/cctv18/android_kernel_common_oneplus_sm8650 -b oneplus/sm8650_v_15.0.0_oneplus12 common
             echo "sourcecode=cctv18sm8650_v_15.0.0_oneplus12_6.1.118" >> $GITHUB_OUTPUT
           else
             echo "正在克隆源码原版仓库..."
@@ -525,11 +525,11 @@ jobs:
       - name: 设置环境变量
         run: |
           if [[ -n "${{ github.event.inputs.kernel_suffix }}" ]]; then
-            FULL_VERSION=${{ format('{0}.75-{1}', env.KERNEL_VERSION, github.event.inputs.kernel_suffix) }}
+            FULL_VERSION=${{ format('{0}.118-{1}', env.KERNEL_VERSION, github.event.inputs.kernel_suffix) }}
             echo "FULL_VERSION=$FULL_VERSION" >> $GITHUB_ENV
             export FULL_VERSION=$FULL_VERSION
           else
-            FULL_VERSION=${{ format('{0}.75-{1}', env.KERNEL_VERSION, env.KERNEL_NAME) }}
+            FULL_VERSION=${{ format('{0}.118-{1}', env.KERNEL_VERSION, env.KERNEL_NAME) }}
             echo "FULL_VERSION=$FULL_VERSION" >> $GITHUB_ENV
             export FULL_VERSION=$FULL_VERSION
           fi
