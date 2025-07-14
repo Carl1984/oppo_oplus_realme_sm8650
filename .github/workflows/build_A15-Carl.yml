@@ -280,22 +280,22 @@ jobs:
 
               # cp ../oppo_oplus_realme_sm8650/patches/0001-kernel-patch-susfs-v1.5.7-to-KernelSU-Next-v1.0.7.patch ./
               # patch -p1 --forward --fuzz=3 < 0001-kernel-implement-susfs-v1.5.5-v1.5.7-KSUN-v1.0.8.patch || true
-              patch -p1 --forward < ksun_susfs_latest.patch || true
+
               cd ../common
 
 
               patch -p1 < 50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch || true
-              
+              cd ./KernelSU-Next
 
           fi     
-              
+              cd ../common
               # Replace next_hooks.patch with syscall_hooks.patch
-              cp ../kernel_patches/next/syscall_hooks.patch ./
-              patch -p1 -F 3 < syscall_hooks.patch
+              #cp ../kernel_patches/next/syscall_hooks.patch ./
+              #patch -p1 -F 3 < syscall_hooks.patch
 
 
-              #cp ../kernel_patches/next/scope_min_manual_hooks_v1.4.patch ./
-              #patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
+              cp ../kernel_patches/next/scope_min_manual_hooks_v1.4.patch ./
+              patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
                 
               cp ../kernel_patches/69_hide_stuff.patch ./
               patch -p1 -F 3 < 69_hide_stuff.patch
