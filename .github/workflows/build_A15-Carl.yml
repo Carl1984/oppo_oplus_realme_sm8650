@@ -264,17 +264,20 @@ jobs:
           if [[ "${{ github.event.inputs.SUSFS_ENABLED }}" == "true" ]]; then
               echo "Applying SUSFS patches for KernelSU Next..."
 
-              patch -p1 --forward --fuzz=3 < 10_enable_susfs_for_ksu.patch || true           
+              # patch -p1 --forward --fuzz=3 < 10_enable_susfs_for_ksu.patch || true           
 
-              patch -p1 --forward --fuzz=3 < fix_apk_sign.c.patch              
+              # patch -p1 --forward --fuzz=3 < fix_apk_sign.c.patch              
 
-              patch -p1 --forward --fuzz=3 < fix_core_hook.c.patch
+              # patch -p1 --forward --fuzz=3 < fix_core_hook.c.patch
               
-              patch -p1 --forward --fuzz=3 < fix_selinux.c.patch              
+              # patch -p1 --forward --fuzz=3 < fix_selinux.c.patch              
 
-              patch -p1 --forward --fuzz=3 < fix_ksud.c.patch
+              # patch -p1 --forward --fuzz=3 < fix_ksud.c.patch
 
-              patch -p1 --forward --fuzz=3 < fix_rules.c.patch              
+              # patch -p1 --forward --fuzz=3 < fix_rules.c.patch              
+
+              cp ../oppo_oplus_realme_sm8650/patches/0001-kernel-patch-susfs-v1.5.7-to-KernelSU-Next-v1.0.7.patch ./
+              patch -p1 --forward --fuzz=3 < 0001-kernel-patch-susfs-v1.5.7-to-KernelSU-Next-v1.0.7.patch || true
 
               cd ../common
               patch -p1 < 50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch || true
