@@ -78,14 +78,11 @@ on:
           - ksun
           - None
         default: 'SukiUltra'
-      ksun_branch:
-        description: 'ksun_branch'
+      SUSFS_ENABLED:
+        description: "添加 SUSFS"
         required: true
-        type: choice
-        options:
-          - "next-susfs"
-          - "next"
-        default: 'next'
+        type: boolean
+        default: true
       hook_method:
         description: hook模式(大部分情况manual即可，少数需切换sus su模式的场景才需要kprobes钩子)
         required: true
@@ -123,7 +120,7 @@ jobs:
           echo "Selected basebranch: ${{ github.event.inputs.basebranch }}"
           echo "Selected KPM: ${{ github.event.inputs.KPM }}"
           echo "Selected ksu_type: ${{ github.event.inputs.ksu_type }}"
-          echo "Selected ksun_branch: ${{ github.event.inputs.ksun_branch }}"
+          echo "Selected KSUN SUSFS_ENABLED: ${{ github.event.inputs.SUSFS_ENABLED }}"
           echo "Selected bbr_enable: ${{ github.event.inputs.bbr_enable }}"
           echo "Selected ssg_enable: ${{ github.event.inputs.ssg_enable }}"
           echo "Selected hook_method: ${{ github.event.inputs.hook_method }}"
@@ -240,13 +237,8 @@ jobs:
         if: ${{github.event.inputs.ksu_type == 'ksun'}}
         run: |
           cd kernel_workspace
-          if [[ "${{ github.event.inputs.ksun_branch }}" == "next" ]]; then
-              curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next
-              BASE_VERSION=10200
-          else
-              curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next-susfs
-              BASE_VERSION=10198
-          fi
+          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next
+          BASE_VERSION=10200
           cd ./KernelSU-Next
           KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+"  $BASE_VERSION)
           echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
@@ -269,17 +261,41 @@ jobs:
           
           # Apply patches
           cd ./KernelSU-Next
-          if [[ "${{ github.event.inputs.ksun_branch }}" == "next" ]]; then
-            cp ../oppo_oplus_realme_sm8650/patches/0001-kernel-patch-susfs-v1.5.7-to-KernelSU-Next-v1.0.7.patch ./
-            patch -p1 --forward --fuzz=3 < 0001-kernel-patch-susfs-v1.5.7-to-KernelSU-Next-v1.0.7.patch || true
+          if [[ "${{ github.event.inputs.SUSFS_ENABLED }}" == "true" ]]; then
+              echo "Applying SUSFS patches for KernelSU Next..."
+
+              patch -p1 --forward --fuzz=3 < 10_enable_susfs_for_ksu.patch || true
+           
+              cp ../../kernel_patches/next/susfs_fix_patches/v1.5.9/fix_apk_sign.c.patch ./
+              patch -p1 --forward --fuzz=3 < fix_apk_sign.c.patch
+              
+              cp ../../kernel_patches/next/susfs_fix_patches/v1.5.9/fix_core_hook.c.patch ./
+              patch -p1 --forward --fuzz=3 < fix_core_hook.c.patch
+              
+              cp ../../kernel_patches/next/susfs_fix_patches/v1.5.9/fix_selinux.c.patch ./
+              patch -p1 --forward --fuzz=3 < fix_selinux.c.patch
+              
+              cp ../../kernel_patches/next/susfs_fix_patches/v1.5.9/fix_ksud.c.patch ./
+              patch -p1 --forward --fuzz=3 < fix_ksud.c.patch
+
+              cp ../../kernel_patches/next/susfs_fix_patches/v1.5.9/fix_rules.c.patch ./
+              patch -p1 --forward --fuzz=3 < fix_rules.c.patch              
+
+              cd ../common
+              patch -p1 < 50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch || true
+              
+              # Replace next_hooks.patch with syscall_hooks.patch
+              # cp ../kernel_patches/next/syscall_hooks.patch ./
+              # patch -p1 -F 3 < syscall_hooks.patch
+              
+              cp ../kernel_patches/next/scope_min_manual_hooks_v1.4.patch ./
+              patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
+                
+              cp ../kernel_patches/69_hide_stuff.patch ./
+              patch -p1 -F 3 < 69_hide_stuff.patch
+
           fi
-          cd ../common
-          patch -p1 < 50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch || true
-          # Replace next_hooks.patch with syscall_hooks.patch
-          cp ../kernel_patches/next/syscall_hooks.patch ./
-          patch -p1 -F 3 < syscall_hooks.patch
-          cp ../kernel_patches/69_hide_stuff.patch ./
-          patch -p1 -F 3 < 69_hide_stuff.patch
+
           
       - name: 应用 lz4 patch  
         run: |
@@ -554,7 +570,7 @@ jobs:
             - 特性：
             - KUS Type：${{ github.event.inputs.ksu_type }}   
             - KPM：${{ github.event.inputs.KPM }}   （KSU 为 SukiSU 时 ）
-            - ksun_branch：${{ github.event.inputs.ksun_branch }}   （KSU 为 KSU Next 时 ）
+            - KSUN SUSFS_ENABLED ：${{ github.event.inputs.SUSFS_ENABLED }}   （KSU 为 KSU Next 时 ）
             - LZ4K支持：${{ github.event.inputs.lz4k_enable }}
             - 风驰内核支持：${{ github.event.inputs.scx_enable }}
             - BBR/Brutal 等拥塞控制算法支持：${{ github.event.inputs.bbr_enable }}
