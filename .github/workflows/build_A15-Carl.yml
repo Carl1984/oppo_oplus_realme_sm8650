@@ -6,7 +6,7 @@ env:
   FEIL: 'oppo+oplus+realme'
   ANDROID_VERSION: 'android14'
   KERNEL_VERSION: '6.1'
-  KERNEL_NAME: 'android14-11-o-g6567d1f5c5e2'  #ace5 6.1.118
+  KERNEL_NAME: 'android14-11-o-g8e4160e371e5'  #ace5 6.1.118
   # KERNEL_NAME: 'android14-11-o-g239209decfd3'  #ace5 6.1.75
   #KERNEL_NAME: 'android14-11-o-gb3c173388f97' #13R
   KERNELSU_VARIANT: 'SukiSU-Ultra'
