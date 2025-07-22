@@ -250,7 +250,7 @@ jobs:
           cp ./susfs4ksu/kernel_patches/fs/* ./common/fs/
           cp ./susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
           #cp ./kernel_patches/next/susfs_fix_patches/v1.5.9/* ./KernelSU-Next/
-          cp ./kernel_patches/next/0001-kernel-implement-susfs-v1.5.5-v1.5.7-KSUN-v1.0.8.patch ./KernelSU-Next/
+          #cp ./kernel_patches/next/0001-kernel-implement-susfs-v1.5.5-v1.5.7-KSUN-v1.0.8.patch ./KernelSU-Next/
 
           # Apply patches
           cd ./KernelSU-Next
