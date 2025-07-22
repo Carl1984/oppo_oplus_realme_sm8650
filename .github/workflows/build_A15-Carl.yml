@@ -3,7 +3,6 @@ name: 欧加真 Android 15 通用OKI内核-改
 env:
   TZ: Asia/Shanghai
   CPU: 'sm8650'
-  FEIL: 'oppo+oplus+realme'
   ANDROID_VERSION: 'android14'
   KERNEL_VERSION: '6.1'
   KERNEL_NAME: 'android14-11-o-g8e4160e371e5'  #ace5 6.1.118
@@ -18,14 +17,6 @@ on:
     inputs:
       lz4k_enable:
         description: '是否安装 LZ4K 补丁'
-        required: true
-        type: choice
-        default: 'false'
-        options:
-          - 'true'
-          - 'false'
-      scx_enable:
-        description: '是否安装风驰内核驱动'
         required: true
         type: choice
         default: 'false'
@@ -115,7 +106,6 @@ jobs:
       - name: Show selected inputs debug
         run: |
           echo "Selected lz4k_enable: ${{ github.event.inputs.lz4k_enable }}"
-          echo "Selected scx_enable: ${{ github.event.inputs.scx_enable }}"
           echo "Selected kernel_suffix: ${{ github.event.inputs.kernel_suffix }}"
           echo "Selected basebranch: ${{ github.event.inputs.basebranch }}"
           echo "Selected KPM: ${{ github.event.inputs.KPM }}"
@@ -253,7 +243,8 @@ jobs:
             git clone https://github.com/ShirkNeko/SukiSU_patch.git
           fi        
           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}
-          git clone https://github.com/WildKernels/kernel_patches.git
+          # git clone https://github.com/WildKernels/kernel_patches.git
+          git clone https://github.com/KernelSU-Next/kernel_patches.git
           cp ./susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./KernelSU-Next/
           cp ./susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch ./common/
           cp ./susfs4ksu/kernel_patches/fs/* ./common/fs/
@@ -294,8 +285,8 @@ jobs:
               #patch -p1 -F 3 < syscall_hooks.patch
 
 
-              cp ../kernel_patches/next/scope_min_manual_hooks_v1.4.patch ./
-              patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
+              cp ../kernel_patches/syscall_hook/min_scope_syscall_hooks_v1.4.patch ./
+              patch -p1 -F 3 < min_scope_syscall_hooks_v1.4.patch
                 
               cp ../kernel_patches/69_hide_stuff.patch ./
               patch -p1 -F 3 < 69_hide_stuff.patch
@@ -326,7 +317,7 @@ jobs:
 
         run: |
           cd kernel_workspace
-          if [ "${{ github.event.inputs.ksu_type }}" != "SukiUltra" ] ||  [ "${{ github.event.inputs.ksu_type }}" != "ksun"  ]; then
+          if [ "${{ github.event.inputs.ksu_type }}" = "SukiUltra" ] ||  [ "${{ github.event.inputs.ksu_type }}" = "ksun"  ]; then
             echo "CONFIG_KSU=y" >> ./common/arch/arm64/configs/gki_defconfig
             if [[ "${{ github.event.inputs.ksu_type }}" == "SukiUltra" ]]; then
               if [[ "${{ github.event.inputs.KPM }}" == "true" ]]; then
@@ -474,12 +465,6 @@ jobs:
           export CLANG_TRIPLE="aarch64-linux-gnu-"
           export CROSS_COMPILE="${CLANG_TRIPLE}"
           cd kernel_workspace
-          if [[ ${{ github.event.inputs.scx_enable }} == "true" ]]; then
-            git clone https://github.com/cctv18/sched_ext.git
-            rm -rf ./sched_ext/.git
-            rm -rf ./sched_ext/README.md
-            cp -r ./sched_ext/* ./common/kernel/sched
-          fi
           cd common
           # make -j$(nproc --all) LLVM=-20 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnuabeihf- CC=clang LD=ld.lld HOSTCC=clang HOSTLD=ld.lld O=out KCFLAGS+=-Wno-error gki_defconfig all
           # make -j$(nproc --all) LLVM=-20 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- SUBARCH=arm64 CC=clang LD=ld.lld HOSTCC=clang HOSTLD=ld.lld O=out KCFLAGS+=-Wno-error gki_defconfig all
@@ -501,7 +486,7 @@ jobs:
       - name: Set suffix
         id: suffix
         run: |
-          echo "value=${{ github.event.inputs.KPM == 'true' && '_KPM' || '' }}${{ github.event.inputs.scx_enable == 'true' && '_SCX' || '' }}${{ github.event.inputs.lz4k_enable == 'true' && '_LZ4KD' || '' }}" >> $GITHUB_OUTPUT
+          echo "value=${{ github.event.inputs.KPM == 'true' && '_KPM' || '' }}${{ github.event.inputs.bbr_enable == 'true' && '_bbr' || '' }}${{ github.event.inputs.ssg_enable == 'true' && '_ssg' || '' }}" >> $GITHUB_OUTPUT
           
       - name: 克隆 AnyKernel3 并打包
         run: |
@@ -517,10 +502,11 @@ jobs:
           if [[ ${{ github.event.inputs.lz4k_enable }} == "true" ]]; then
             wget https://raw.githubusercontent.com/Suxiaoqinx/kernel_manifest_OnePlus_Sukisu_Ultra/main/zram.zip
           fi
+          echo "BUILD_TIME=$(TZ=Asia/Shanghai date "+%Y%m%d%H%M")" >> $GITHUB_ENV
           if [[ -n "${{ github.event.inputs.kernel_suffix }}" ]]; then
-            zip -r ../AnyKernel3_${{ github.event.inputs.ksu_type }}_${{ env.KSUVER }}${{ steps.suffix.outputs.value }}_${{ github.event.inputs.kernel_suffix }}.zip ./*
+            zip -r ../AnyKernel3_${{ github.event.inputs.ksu_type }}_${{ env.KSUVER }}${{ steps.suffix.outputs.value }}_${{ github.event.inputs.kernel_suffix }}_${{ env.BUILD_TIME }}.zip ./*
           else
-            zip -r ../AnyKernel3_${{ github.event.inputs.ksu_type }}_${{ env.KSUVER }}${{ steps.suffix.outputs.value }}_${{ env.KERNEL_NAME }}.zip ./*
+            zip -r ../AnyKernel3_${{ github.event.inputs.ksu_type }}_${{ env.KSUVER }}${{ steps.suffix.outputs.value }}_${{ env.KERNEL_NAME }}_${{ env.BUILD_TIME }}.zip ./*
           fi
 
       - name: 上传 ZIP 工件
@@ -567,7 +553,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: "${{ env.TAG_HEAD }}-${{ env.TIME }}"
-          name: "${{ env.TAG_HEAD }}-${{ env.FULL_VERSION }}"
+          name: "${{ env.TAG_HEAD }}-${{ env.FULL_VERSION }}-${{ env.TIME }}"
           body: |
             ### 📱 欧加真 Android 15 KSU SM8650 通用内核 | 构建信息
             - 内核版本号: ${{ env.FULL_VERSION }}
@@ -576,17 +562,15 @@ jobs:
             - 特性：
             - KUS Type：${{ github.event.inputs.ksu_type }}   
             - KPM：${{ github.event.inputs.KPM }}   （KSU 为 SukiSU 时 ）
-            - KSUN SUSFS_ENABLED ：${{ github.event.inputs.SUSFS_ENABLED }}   （KSU 为 KSU Next 时 ）
+            - KSUN SUSFS_ENABLED ：${{ github.event.inputs.SUSFS_ENABLED }}   （KSU 暂时SUSFS 编译出错 ）
             - LZ4K支持：${{ github.event.inputs.lz4k_enable }}
-            - 风驰内核支持：${{ github.event.inputs.scx_enable }}
             - BBR/Brutal 等拥塞控制算法支持：${{ github.event.inputs.bbr_enable }}
             - 三星SSG IO调度器支持：${{ github.event.inputs.ssg_enable }}
-            - 推荐系统：ColorOS 15 / RealmeUI 6.0
             - SukiSU管理器下载：[SukiSU-Ultra](https://github.com/ShirkNeko/SukiSU-Ultra/releases)
             - KSU Next 管理器：[KernelSU-Next](https://github.com/KernelSU-Next/KernelSU-Next/releases)
             ### ⏫️ 更新内容：
             - 更新KSU至最新版本（${{ needs.build.outputs.ksuver }}）
-            - KUS Type 为None 的内核 无root 支持（请使用LKM模式， 仅更新lz4）， 不为None的内核 支持 SUSFS + VFS
+            - KUS Type 为None 的内核 无root 支持（请使用LKM模式， 仅做其他编译优化）， 不为None的内核 支持 SUSFS + VFS
             - 升级LZ4 到 1.10
 
           draft: false
