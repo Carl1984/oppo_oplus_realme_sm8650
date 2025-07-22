@@ -73,7 +73,7 @@ on:
         description: "添加 SUSFS"
         required: true
         type: boolean
-        default: true
+        default: false
       hook_method:
         description: hook模式(大部分情况manual即可，少数需切换sus su模式的场景才需要kprobes钩子)
         required: true
