@@ -243,8 +243,8 @@ jobs:
             git clone https://github.com/ShirkNeko/SukiSU_patch.git
           fi        
           git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}
-          # git clone https://github.com/WildKernels/kernel_patches.git
-          git clone https://github.com/KernelSU-Next/kernel_patches.git
+          git clone https://github.com/WildKernels/kernel_patches.git
+          # git clone https://github.com/KernelSU-Next/kernel_patches.git
           cp ./susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./KernelSU-Next/
           cp ./susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch ./common/
           cp ./susfs4ksu/kernel_patches/fs/* ./common/fs/
@@ -283,10 +283,11 @@ jobs:
               # Replace next_hooks.patch with syscall_hooks.patch
               #cp ../kernel_patches/next/syscall_hooks.patch ./
               #patch -p1 -F 3 < syscall_hooks.patch
+              cp ../kernel_patches/next/scope_min_manual_hooks_v1.4.patch ./
+              patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
 
-
-              cp ../kernel_patches/syscall_hook/min_scope_syscall_hooks_v1.4.patch ./
-              patch -p1 -F 3 < min_scope_syscall_hooks_v1.4.patch
+              #cp ../kernel_patches/syscall_hook/min_scope_syscall_hooks_v1.4.patch ./
+              #patch -p1 -F 3 < min_scope_syscall_hooks_v1.4.patch
                 
               cp ../kernel_patches/69_hide_stuff.patch ./
               patch -p1 -F 3 < 69_hide_stuff.patch
