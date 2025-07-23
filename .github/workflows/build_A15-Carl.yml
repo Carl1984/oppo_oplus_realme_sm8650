@@ -471,6 +471,7 @@ jobs:
           # make -j$(nproc --all) LLVM=-20 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- SUBARCH=arm64 CC=clang LD=ld.lld HOSTCC=clang HOSTLD=ld.lld O=out KCFLAGS+=-Wno-error gki_defconfig all
           make -j"$(nproc --all)" LLVM=1 LLVM_IAS=1 ARCH=arm64 SUBARCH=arm64  CROSS_COMPILE=aarch64-linux-gnu- CC="clang" O=out CONFIG_LTO_CLANG=y CONFIG_LTO_CLANG_THIN=y CONFIG_LTO_CLANG_FULL=n CONFIG_LTO_NONE=n gki_defconfig all 
           echo "内核编译完成！"
+          echo "BT=$(TZ=Asia/Shanghai date "+%Y%m%d%H%M")" >> $GITHUB_ENV
          
       - name: 应用KPMpatch_linux并修补内核
         if: ${{github.event.inputs.ksu_type == 'SukiUltra' && github.event.inputs.KPM == 'true' }}
@@ -503,7 +504,7 @@ jobs:
           if [[ ${{ github.event.inputs.lz4k_enable }} == "true" ]]; then
             wget https://raw.githubusercontent.com/Suxiaoqinx/kernel_manifest_OnePlus_Sukisu_Ultra/main/zram.zip
           fi
-          echo "BT=$(TZ=Asia/Shanghai date "+%Y%m%d%H%M")" >> $GITHUB_ENV
+          
           if [[ -n "${{ github.event.inputs.kernel_suffix }}" ]]; then
             zip -r ../AnyKernel3_${{ github.event.inputs.ksu_type }}_${{ env.KSUVER }}${{ steps.suffix.outputs.value }}_${{ github.event.inputs.kernel_suffix }}_${{ env.BT }}.zip ./*
           else
