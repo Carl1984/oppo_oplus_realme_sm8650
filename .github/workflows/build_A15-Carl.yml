@@ -134,19 +134,26 @@ jobs:
           mkdir kernel_workspace
           cd kernel_workspace
 
-          if [[ "${{ github.event.inputs.bbr_enable }}" == "true" || "${{ github.event.inputs.bbr_enable }}" == "default" || "${{ github.event.inputs.ssg_enable }}" == "true" ]]; then
-            echo "正在克隆源码仓库...使用cctv18修改后的一加12源码"
-            git clone --depth=1 https://github.com/cctv18/android_kernel_common_oneplus_sm8650 -b oneplus/sm8650_v_15.0.0_oneplus12_6.1.118 common
-            # git clone --depth=1 https://github.com/cctv18/android_kernel_common_oneplus_sm8650 -b oneplus/sm8650_v_15.0.0_oneplus12 common
-            echo "sourcecode=cctv18sm8650_v_15.0.0_oneplus12_6.1.118" >> $GITHUB_ENV
-          else
-            echo "正在克隆源码原版仓库..."
-            git clone --depth 1 https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm8650/ -b oneplus/"${{ github.event.inputs.basebranch }}"  vendor
-            mv vendor/* ..
-            git clone --depth=1 https://github.com/OnePlusOSS/android_kernel_common_oneplus_sm8650 -b oneplus/"${{ github.event.inputs.basebranch }}" common            
-            echo "sourcecode=${{ github.event.inputs.basebranch}}" >> $GITHUB_ENV
+          # if [[ "${{ github.event.inputs.bbr_enable }}" == "true" || "${{ github.event.inputs.bbr_enable }}" == "default" || "${{ github.event.inputs.ssg_enable }}" == "true" ]]; then
+          #   echo "正在克隆源码仓库...使用cctv18修改后的一加12源码"
+          #   git clone --depth=1 https://github.com/cctv18/android_kernel_common_oneplus_sm8650 -b oneplus/sm8650_v_15.0.0_oneplus12_6.1.118 common
+          #   # git clone --depth=1 https://github.com/cctv18/android_kernel_common_oneplus_sm8650 -b oneplus/sm8650_v_15.0.0_oneplus12 common
+          #   echo "sourcecode=cctv18sm8650_v_15.0.0_oneplus12_6.1.118" >> $GITHUB_ENV
+          # else
+          #   echo "正在克隆源码原版仓库..."
+          #   git clone --depth 1 https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm8650/ -b oneplus/"${{ github.event.inputs.basebranch }}"  vendor
+          #   mv vendor/* ..
+          #   git clone --depth=1 https://github.com/OnePlusOSS/android_kernel_common_oneplus_sm8650 -b oneplus/"${{ github.event.inputs.basebranch }}" common            
+          #   echo "sourcecode=${{ github.event.inputs.basebranch}}" >> $GITHUB_ENV
+          # fi
 
-          fi
+          echo "正在克隆源码原版仓库..."
+          git clone --depth 1 https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm8650/ -b oneplus/"${{ github.event.inputs.basebranch }}"  vendor
+          mv vendor/* ..
+          git clone --depth=1 https://github.com/OnePlusOSS/android_kernel_common_oneplus_sm8650 -b oneplus/"${{ github.event.inputs.basebranch }}" common            
+          echo "sourcecode=${{ github.event.inputs.basebranch}}" >> $GITHUB_ENV
+            
+          
           echo ">>> 初始化仓库完成"
           git clone https://github.com/Carl1984/oppo_oplus_realme_sm8650.git
 
@@ -166,6 +173,15 @@ jobs:
           # cp ./oppo_oplus_realme_sm8650/patches/oplus_locking.c ./common/kernel/locking/
           # rm -rf ./common/kernel/locking/sa_common_struct.h
           # cp ./oppo_oplus_realme_sm8650/patches/sa_common_struct.h ./common/kernel/locking/
+
+
+          #补全SSG文件
+          if [ "${{ github.event.inputs.ssg_enable }}" == "true" ]; then  
+            rm -rf ./common/block/Kconfig.iosched
+            rm -rf ./common/block/Makefile
+            rm -rf ./common/block/elevator.c          
+            cp -r ./oppo_oplus_realme_sm8650/block/* ./common/block/      
+          fi            
           
           echo "正在去除 ABI 保护 & 去除 dirty 后缀..."
           rm common/android/abi_gki_protected_exports_* || true
