@@ -121,6 +121,7 @@ jobs:
           echo "Selected KSUN SUSFS_ENABLED: ${{ github.event.inputs.SUSFS_ENABLED }}"
           echo "Selected bbr_enable: ${{ github.event.inputs.bbr_enable }}"
           echo "Selected ssg_enable: ${{ github.event.inputs.ssg_enable }}"
+          echo "Selected better_net: ${{ github.event.inputs.better_net }}"
           echo "Selected hook_method: ${{ github.event.inputs.hook_method }}"
           
       - name: 安装配置环境依赖
@@ -615,7 +616,7 @@ jobs:
       - name: Set suffix
         id: suffix
         run: |
-          echo "value=${{ github.event.inputs.KPM == 'true' && '_KPM' || '' }}${{ github.event.inputs.bbr_enable == 'true' && '_bbr' || '' }}${{ github.event.inputs.ssg_enable == 'true' && '_ssg' || '' }}" >> $GITHUB_OUTPUT
+          echo "value=${{ github.event.inputs.KPM == 'true' && '_KPM' || '' }}${{ github.event.inputs.bbr_enable == 'true' && '_bbr' || '' }}${{ github.event.inputs.better_net == 'true' && '_betternet' || '' }}${{ github.event.inputs.ssg_enable == 'true' && '_ssg' || '' }}" >> $GITHUB_OUTPUT
           
       - name: 克隆 AnyKernel3 并打包
         run: |
