@@ -213,6 +213,7 @@ jobs:
           # ./antman -S
 
       - name: 添加 SukiSU Ultra
+        if: ${{github.event.inputs.ksu_type == 'SukiUltra'}}
         id: ksu_version
         run: |
           # 进入内核工作目录
