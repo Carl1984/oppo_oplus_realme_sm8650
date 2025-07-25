@@ -32,6 +32,14 @@ on:
           - 'false'
           - 'true'
           - 'default'
+      better_net:
+        description: '是否开启网络功能增强优化配置(优化代理连接,IPV6等功能)'
+        required: true
+        type: choice
+        default: 'true'
+        options:
+          - 'true'
+          - 'false'
       ssg_enable:
         description: '是否启用三星SSG IO调度器'
         required: true
@@ -203,20 +211,82 @@ jobs:
           # chmod +x antman
           # ./antman -S
 
-          
-          
-      - name: 添加 SukiSU-Ultra
-        if: ${{github.event.inputs.ksu_type == 'SukiUltra'}}
+      - name: 添加 SukiSU Ultra
         id: ksu_version
         run: |
+          # 进入内核工作目录
           cd kernel_workspace
           curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU-Ultra/refs/heads/main/kernel/setup.sh" | bash -s susfs-main
           cd ./KernelSU
-          KSU_VERSION=$(expr $(/usr/bin/git rev-list --count main) "+" 10700)
+          export KSU_VERSION=$KSU_VERSION
+          # 尝试最多 3 次获取 KernelSU API 版本号
+          for i in {1..3}; do
+            # 从远程 Makefile 中提取 KSU_API_VERSION
+            KSU_API_VERSION=$(curl -s "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/susfs-main/kernel/Makefile" | 
+              # 查找第一个包含版本定义的行
+              grep -m1 "KSU_VERSION_API :=" | 
+              # 提取等号后的值
+              awk -F'= ' '{print $2}' | 
+              # 删除所有空白字符
+              tr -d '[:space:]')
+            # 如果成功获取到版本号则跳出循环，否则等待 1 秒后重试
+            [ -n "$KSU_API_VERSION" ] && break || sleep 1
+          done
+          # 如果获取失败，使用默认版本号 3.1.7
+          [ -z "$KSU_API_VERSION" ] && KSU_API_VERSION="3.1.7"
+          # 将 API 版本号存储到 GitHub 环境变量
+          echo "KSU_API_VERSION=$KSU_API_VERSION" >> $GITHUB_ENV
+          # 创建版本定义模板&版本格式函数
+          # KSU_VERSION_API: API 版本定义
+          # KSU_VERSION_FULL: 完整版本定义
+          VERSION_DEFINITIONS=$(cat << EOF
+          define get_ksu_version_full
+          v\\$1-SukiSU-cctv18
+          endef
+
+          KSU_VERSION_API := $KSU_API_VERSION
+          KSU_VERSION_FULL := v$KSU_API_VERSION-SukiSU-cctv18
+          EOF
+              )
+          # 清理内核 Makefile 中的旧版本定义
+          # 删除版本函数
+          sed -i '/define get_ksu_version_full/,/endef/d' kernel/Makefile
+          # 删除 API 版本定义
+          sed -i '/KSU_VERSION_API :=/d' kernel/Makefile
+          # 删除完整版本定义
+          sed -i '/KSU_VERSION_FULL :=/d' kernel/Makefile
+          # 在 REPO_OWNER 行后插入新版本定义
+          awk -v def="$VERSION_DEFINITIONS" '
+            # 当找到 REPO_OWNER 行时，插入版本定义并设置标记
+            /REPO_OWNER :=/ {print; print def; inserted=1; next}
+            # 打印所有行
+            1
+            # 如果未找到插入点，在文件末尾追加
+            END {if (!inserted) print def}
+          ' kernel/Makefile > kernel/Makefile.tmp && mv kernel/Makefile.tmp kernel/Makefile
+
+          # 生成自定义版本号（基于提交计数）, 失败时使用 114514
+          KSU_VERSION=$(expr $(git rev-list --count main) + 10700 2>/dev/null || echo 114514)
+          # 存储版本号到 GitHub 环境变量
           echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
           echo "ksuver=$KSU_VERSION" >> $GITHUB_OUTPUT
-          export KSU_VERSION=$KSU_VERSION
-          sed -i "s/DKSU_VERSION=12800/DKSU_VERSION=$KSU_VERSION/" kernel/Makefile
+
+          # 验证修改结果
+          grep -A10 "REPO_OWNER" kernel/Makefile  # 检查插入点后的内容
+          grep "KSU_VERSION_FULL" kernel/Makefile # 确认版本定义存在         
+          
+      # - name: 添加 SukiSU-Ultra
+      #   if: ${{github.event.inputs.ksu_type == 'SukiUltra'}}
+      #   id: ksu_version
+      #   run: |
+      #     cd kernel_workspace
+      #     curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU-Ultra/refs/heads/main/kernel/setup.sh" | bash -s susfs-main
+      #     cd ./KernelSU
+      #     KSU_VERSION=$(expr $(/usr/bin/git rev-list --count main) "+" 10700)
+      #     echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
+      #     echo "ksuver=$KSU_VERSION" >> $GITHUB_OUTPUT
+      #     export KSU_VERSION=$KSU_VERSION
+      #     sed -i "s/DKSU_VERSION=12800/DKSU_VERSION=$KSU_VERSION/" kernel/Makefile
 
       - name: 应用 SUSFS 修补程序 SukiSU-Ultra
         if: ${{github.event.inputs.ksu_type == 'SukiUltra'}}
@@ -399,8 +469,48 @@ jobs:
           # echo "CONFIG_TCP_CONG_BIC=n" >> ./common/arch/arm64/configs/gki_defconfig
           # echo "CONFIG_TCP_CONG_WESTWOOD=n" >> ./common/arch/arm64/configs/gki_defconfig
           # echo "CONFIG_TCP_CONG_HTCP=n" >> ./common/arch/arm64/configs/gki_defconfig
+
+          # 开启O2编译优化配置
+          echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y" >> ./common/arch/arm64/configs/gki_defconfig
           #禁用 defconfig 检查
           sed -i 's/check_defconfig//' ./common/build.config.gki
+
+      - name: 启用网络功能增强优化配置
+        run: |
+          cd kernel_workspace
+          if [ "${{ github.event.inputs.better_net }}" == "true" ]; then
+            #启用  BPF 流解析器,实现高性能网络流量处理,增强网络监控和分析能力
+            echo "CONFIG_BPF_STREAM_PARSER=y" >> ./common/arch/arm64/configs/gki_defconfig
+            #开启增强 Netfilter 防火墙扩展模块,支持基于地址类型的匹配规则,启用 IP 集合支持,提高防火墙规则灵活性,支持更复杂的流量过滤策略
+            echo "CONFIG_NETFILTER_XT_MATCH_ADDRTYPE=y" >> ./common/arch/arm64/configs/gki_defconfig
+            echo "CONFIG_NETFILTER_XT_SET=y" >> ./common/arch/arm64/configs/gki_defconfig
+            #启用 IP 集框架及其多种数据结构实现,提供高效的大规模 IP 地址管理,提高防火墙规则处理效率,减少内存占用
+            echo "CONFIG_IP_SET=y" >> ./common/arch/arm64/configs/gki_defconfig
+            echo "CONFIG_IP_SET_MAX=65534" >> ./common/arch/arm64/configs/gki_defconfig
+            echo "CONFIG_IP_SET_BITMAP_IP=y" >> ./common/arch/arm64/configs/gki_defconfig
+            echo "CONFIG_IP_SET_BITMAP_IPMAC=y" >> ./common/arch/arm64/configs/gki_defconfig
+            echo "CONFIG_IP_SET_BITMAP_PORT=y" >> ./common/arch/arm64/configs/gki_defconfig
+            echo "CONFIG_IP_SET_HASH_IP=y" >> ./common/arch/arm64/configs/gki_defconfig
+            echo "CONFIG_IP_SET_HASH_IPMARK=y" >> ./common/arch/arm64/configs/gki_defconfig
+            echo "CONFIG_IP_SET_HASH_IPPORT=y" >> ./common/arch/arm64/configs/gki_defconfig
+            echo "CONFIG_IP_SET_HASH_IPPORTIP=y" >> ./common/arch/arm64/configs/gki_defconfig
+            echo "CONFIG_IP_SET_HASH_IPPORTNET=y" >> ./common/arch/arm64/configs/gki_defconfig
+            echo "CONFIG_IP_SET_HASH_IPMAC=y" >> ./common/arch/arm64/configs/gki_defconfig
+            echo "CONFIG_IP_SET_HASH_MAC=y" >> ./common/arch/arm64/configs/gki_defconfig
+            echo "CONFIG_IP_SET_HASH_NETPORTNET=y" >> ./common/arch/arm64/configs/gki_defconfig
+            echo "CONFIG_IP_SET_HASH_NET=y" >> ./common/arch/arm64/configs/gki_defconfig
+            echo "CONFIG_IP_SET_HASH_NETNET=y" >> ./common/arch/arm64/configs/gki_defconfig
+            echo "CONFIG_IP_SET_HASH_NETPORT=y" >> ./common/arch/arm64/configs/gki_defconfig
+            echo "CONFIG_IP_SET_HASH_NETIFACE=y" >> ./common/arch/arm64/configs/gki_defconfig
+            echo "CONFIG_IP_SET_LIST_SET=y" >> ./common/arch/arm64/configs/gki_defconfig
+            #启用 IPv6 网络地址转换
+            echo "CONFIG_IP6_NF_NAT=y" >> ./common/arch/arm64/configs/gki_defconfig
+            echo "CONFIG_IP6_NF_TARGET_MASQUERADE=y" >> ./common/arch/arm64/configs/gki_defconfig
+            #由于部分机型的vintf兼容性检测规则，在开启CONFIG_IP6_NF_NAT后开机会出现"您的设备内部出现了问题。请联系您的设备制造商了解详情。"的提示，故添加一个配置修复补丁，在编译内核时隐藏CONFIG_IP6_NF_NAT=y但不影响对应功能编译
+            cd common
+            wget https://github.com/cctv18/oppo_oplus_realme_sm8650/raw/refs/heads/main/other_patch/config.patch
+            patch -p1 -F 3 < config.patch || true
+          fi
 
       # - name: 禁用 defconfig 检查
       #   if: ${{github.event.inputs.ksu_type == 'None' }}
@@ -485,7 +595,8 @@ jobs:
           cd common
           # make -j$(nproc --all) LLVM=-20 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnuabeihf- CC=clang LD=ld.lld HOSTCC=clang HOSTLD=ld.lld O=out KCFLAGS+=-Wno-error gki_defconfig all
           # make -j$(nproc --all) LLVM=-20 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- SUBARCH=arm64 CC=clang LD=ld.lld HOSTCC=clang HOSTLD=ld.lld O=out KCFLAGS+=-Wno-error gki_defconfig all
-          make -j"$(nproc --all)" LLVM=1 LLVM_IAS=1 ARCH=arm64 SUBARCH=arm64  CROSS_COMPILE=aarch64-linux-gnu- CC="clang" O=out CONFIG_LTO_CLANG=y CONFIG_LTO_CLANG_THIN=y CONFIG_LTO_CLANG_FULL=n CONFIG_LTO_NONE=n gki_defconfig all 
+          # make -j"$(nproc --all)" LLVM=1 LLVM_IAS=1 ARCH=arm64 SUBARCH=arm64  CROSS_COMPILE=aarch64-linux-gnu- CC="clang" O=out CONFIG_LTO_CLANG=y CONFIG_LTO_CLANG_THIN=y CONFIG_LTO_CLANG_FULL=n CONFIG_LTO_NONE=n gki_defconfig all 
+          make -j"$(nproc --all)" LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC="clang" LD=ld.lld HOSTLD=ld.lld O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error CONFIG_LTO_CLANG=y CONFIG_LTO_CLANG_THIN=y CONFIG_LTO_CLANG_FULL=n CONFIG_LTO_NONE=n gki_defconfig all
           echo "内核编译完成！"
           echo "BT=$(TZ=Asia/Shanghai date "+%Y%m%d%H%M")" >> $GITHUB_ENV
          
@@ -582,6 +693,7 @@ jobs:
             - KPM：${{ github.event.inputs.KPM }}   （KSU 为 SukiSU 时 ）
             - KSUN SUSFS_ENABLED ：${{ github.event.inputs.SUSFS_ENABLED }}   （KSU 暂时SUSFS 编译出错 ）
             - LZ4K支持：${{ github.event.inputs.lz4k_enable }}
+            - 网络功能增强：${{ github.event.inputs.better_net }}
             - BBR/Brutal 等拥塞控制算法支持：${{ github.event.inputs.bbr_enable }}
             - 三星SSG IO调度器支持：${{ github.event.inputs.ssg_enable }}
             - SukiSU管理器下载：[SukiSU-Ultra](https://github.com/ShirkNeko/SukiSU-Ultra/releases)
