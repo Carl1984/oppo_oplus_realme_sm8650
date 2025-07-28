@@ -7,9 +7,8 @@ env:
   KERNEL_VERSION: '6.1'
   KERNEL_NAME: 'android14-11-o-g8e4160e371e5'  #ace5 6.1.118
   # KERNEL_NAME: 'android14-11-o-g239209decfd3'  #ace5 6.1.75
-  #KERNEL_NAME: 'android14-11-o-gb3c173388f97' #13R
-  KERNELSU_VARIANT: 'SukiSU-Ultra'
-  KERNELSU_BRANCH: 'susfs-dev'
+  #KERNELSU_VARIANT: 'SukiSU-Ultra'
+  #KERNELSU_BRANCH: 'susfs-dev'
 
 on:
   workflow_dispatch:
@@ -62,7 +61,7 @@ on:
           - sm8650_v_15.0.0_ace_3_pro
           - sm8650_v_15.0.0_oneplus_13r
           - realme_GT5pro-AndroidV-common-source
-        default: 'sm8650_v_15.0.0_oneplus_ace5'
+        default: 'sm8650_v_15.0.0_oneplus12'
       KPM:
         type: boolean
         description: "是否启用KPM？"
@@ -315,14 +314,24 @@ jobs:
         if: ${{github.event.inputs.ksu_type == 'ksun'}}
         run: |
           cd kernel_workspace
-          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next
-          BASE_VERSION=10200
-          cd ./KernelSU-Next
-          KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+"  $BASE_VERSION)
-          echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
-          echo "ksuver=$KSU_VERSION" >> $GITHUB_OUTPUT
-          sed -i "s/DKSU_VERSION=11998/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
-
+          if [[ "${{ github.event.inputs.SUSFS_ENABLED }}" == "true" ]]; then
+            curl -LSs "https://raw.githubusercontent.com/pershoot/KernelSU-Next/next-susfs/kernel/setup.sh" | bash -s next-susfs
+            cd ./KernelSU-Next
+            KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+" 10161) #因为使用了第三方，需要随时更新conmmit数以更正版本号
+            echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
+            echo "ksuver=$KSU_VERSION" >> $GITHUB_OUTPUT
+            sed -i "s/DKSU_VERSION=11998/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
+          else          
+            curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next
+            BASE_VERSION=10200
+            cd ./KernelSU-Next
+            KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+"  $BASE_VERSION)
+            echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
+            echo "ksuver=$KSU_VERSION" >> $GITHUB_OUTPUT
+            sed -i "s/DKSU_VERSION=11998/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
+          fi 
+          echo "✅ KernelSU Next 配置完成"
+          
       - name: 应用 SUSFS 修补程序 ksun
         if: ${{github.event.inputs.ksu_type == 'ksun'}}
         run: |
