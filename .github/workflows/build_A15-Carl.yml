@@ -5,8 +5,8 @@ env:
   CPU: 'sm8650'
   ANDROID_VERSION: 'android14'
   KERNEL_VERSION: '6.1'
-  KERNEL_NAME: 'android14-11-o-g8e4160e371e5'  #ace5 6.1.118
-  # KERNEL_NAME: 'android14-11-o-g239209decfd3'  #ace5 6.1.75
+  #KERNEL_NAME: 'android14-11-o-g8e4160e371e5'  #ace5 6.1.118
+  KERNEL_NAME: 'android14-11-o-gbc77d52e878b'  #ace5 6.1.75
   #KERNELSU_VARIANT: 'SukiSU-Ultra'
   #KERNELSU_BRANCH: 'susfs-dev'
 
@@ -22,15 +22,15 @@ on:
         options:
           - 'true'
           - 'false'
-      bbr_enable:
-        description: "是否启用bbr算法(优化上行数据,对手机日用无太大意义甚至可能负优化;false关闭,true仅加入算法,default设为默认)"
-        required: true
-        type: choice
-        default: 'false'
-        options:
-          - 'false'
-          - 'true'
-          - 'default'
+      # bbr_enable:
+      #   description: "是否启用bbr算法(优化上行数据,对手机日用无太大意义甚至可能负优化;false关闭,true仅加入算法,default设为默认)"
+      #   required: true
+      #   type: choice
+      #   default: 'false'
+      #   options:
+      #     - 'false'
+      #     - 'true'
+      #     - 'default'
       better_net:
         description: '是否开启网络功能增强优化配置(优化代理连接,IPV6等功能)'
         required: true
@@ -89,6 +89,14 @@ on:
         options:
           - 'manual'
           - 'kprobes'
+      kernel_v:
+        description: '75或118'
+        required: false
+        type: string
+        default: '118'
+        options:
+          - '75'
+          - '118'
         
 
 jobs:
@@ -142,24 +150,20 @@ jobs:
           mkdir kernel_workspace
           cd kernel_workspace
 
-          # if [[ "${{ github.event.inputs.bbr_enable }}" == "true" || "${{ github.event.inputs.bbr_enable }}" == "default" || "${{ github.event.inputs.ssg_enable }}" == "true" ]]; then
-          #   echo "正在克隆源码仓库...使用cctv18修改后的一加12源码"
-          #   git clone --depth=1 https://github.com/cctv18/android_kernel_common_oneplus_sm8650 -b oneplus/sm8650_v_15.0.0_oneplus12_6.1.118 common
-          #   # git clone --depth=1 https://github.com/cctv18/android_kernel_common_oneplus_sm8650 -b oneplus/sm8650_v_15.0.0_oneplus12 common
-          #   echo "sourcecode=cctv18sm8650_v_15.0.0_oneplus12_6.1.118" >> $GITHUB_ENV
-          # else
-          #   echo "正在克隆源码原版仓库..."
-          #   git clone --depth 1 https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm8650/ -b oneplus/"${{ github.event.inputs.basebranch }}"  vendor
-          #   mv vendor/* ..
-          #   git clone --depth=1 https://github.com/OnePlusOSS/android_kernel_common_oneplus_sm8650 -b oneplus/"${{ github.event.inputs.basebranch }}" common            
-          #   echo "sourcecode=${{ github.event.inputs.basebranch}}" >> $GITHUB_ENV
-          # fi
+          if [[ "${{ github.event.inputs.kernel_v}}" == "75" ]]; then
+             echo "正在克隆源码仓库...使用cctv18修改后的一加12源码"
+             git clone --depth=1 https://github.com/cctv18/android_kernel_common_oneplus_sm8650 -b oneplus/sm8650_v_15.0.0_oneplus12 common
+             # git clone --depth=1 https://github.com/cctv18/android_kernel_common_oneplus_sm8650 -b oneplus/sm8650_v_15.0.0_oneplus12 common
+             echo "sourcecode=cctv18sm8650_v_15.0.0_oneplus12" >> $GITHUB_ENV
+          else
+             echo "正在克隆源码原版仓库..."
+             git clone --depth 1 https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm8650/ -b oneplus/"${{ github.event.inputs.basebranch }}"  vendor
+             mv vendor/* ..
+             git clone --depth=1 https://github.com/OnePlusOSS/android_kernel_common_oneplus_sm8650 -b oneplus/"${{ github.event.inputs.basebranch }}" common            
+             echo "sourcecode=${{ github.event.inputs.basebranch}}" >> $GITHUB_ENV
+          fi
 
-          echo "正在克隆源码原版仓库..."
-          git clone --depth 1 https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm8650/ -b oneplus/"${{ github.event.inputs.basebranch }}"  vendor
-          mv vendor/* ..
-          git clone --depth=1 https://github.com/OnePlusOSS/android_kernel_common_oneplus_sm8650 -b oneplus/"${{ github.event.inputs.basebranch }}" common            
-          echo "sourcecode=${{ github.event.inputs.basebranch}}" >> $GITHUB_ENV
+
             
           
           echo ">>> 初始化仓库完成"
@@ -626,7 +630,7 @@ jobs:
       - name: Set suffix
         id: suffix
         run: |
-          echo "value=${{ github.event.inputs.KPM == 'true' && '_KPM' || '' }}${{ github.event.inputs.bbr_enable == 'true' && '_bbr' || '' }}${{ github.event.inputs.better_net == 'true' && '_betternet' || '' }}${{ github.event.inputs.ssg_enable == 'true' && '_ssg' || '' }}" >> $GITHUB_OUTPUT
+          echo "value=${{ github.event.inputs.KPM == 'true' && '_KPM' || '' }}${{ github.event.inputs.better_net == 'true' && '_betternet' || '' }}${{ github.event.inputs.ssg_enable == 'true' && '_ssg' || '' }}" >> $GITHUB_OUTPUT
           
       - name: 克隆 AnyKernel3 并打包
         run: |
