@@ -709,7 +709,6 @@ jobs:
             - KSUN SUSFS_ENABLED ：${{ github.event.inputs.SUSFS_ENABLED }}   （KSU 暂时SUSFS 编译出错 ）
             - LZ4K支持：${{ github.event.inputs.lz4k_enable }}
             - 网络功能增强：${{ github.event.inputs.better_net }}
-            # - BBR/Brutal 等拥塞控制算法支持：${{ github.event.inputs.bbr_enable }}
             - 三星SSG IO调度器支持：${{ github.event.inputs.ssg_enable }}
             - SukiSU管理器下载：[SukiSU-Ultra](https://github.com/ShirkNeko/SukiSU-Ultra/releases)
             - KSU Next 管理器：[KernelSU-Next](https://github.com/KernelSU-Next/KernelSU-Next/releases)
