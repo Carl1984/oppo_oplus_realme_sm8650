@@ -14,23 +14,6 @@ on:
   workflow_dispatch:
 
     inputs:
-      lz4k_enable:
-        description: '是否安装 LZ4K 补丁'
-        required: true
-        type: choice
-        default: 'false'
-        options:
-          - 'true'
-          - 'false'
-      # bbr_enable:
-      #   description: "是否启用bbr算法(优化上行数据,对手机日用无太大意义甚至可能负优化;false关闭,true仅加入算法,default设为默认)"
-      #   required: true
-      #   type: choice
-      #   default: 'false'
-      #   options:
-      #     - 'false'
-      #     - 'true'
-      #     - 'default'
       better_net:
         description: '是否开启网络功能增强优化配置(优化代理连接,IPV6等功能)'
         required: true
@@ -68,7 +51,7 @@ on:
         required: true
         default: false
       ksu_type:
-        description: '要用的ksu'
+        description: 'KernelSU分支(SukiSU Ultra/KernelSU Next,默认SukiSU Ultra)'
         required: true
         type: choice
         options:
@@ -120,16 +103,15 @@ jobs:
 
       - name: Show selected inputs debug
         run: |
-          echo "Selected lz4k_enable: ${{ github.event.inputs.lz4k_enable }}"
           echo "Selected kernel_suffix: ${{ github.event.inputs.kernel_suffix }}"
           echo "Selected basebranch: ${{ github.event.inputs.basebranch }}"
           echo "Selected KPM: ${{ github.event.inputs.KPM }}"
           echo "Selected ksu_type: ${{ github.event.inputs.ksu_type }}"
           echo "Selected KSUN SUSFS_ENABLED: ${{ github.event.inputs.SUSFS_ENABLED }}"
-          # echo "Selected bbr_enable: ${{ github.event.inputs.bbr_enable }}"
           echo "Selected ssg_enable: ${{ github.event.inputs.ssg_enable }}"
           echo "Selected better_net: ${{ github.event.inputs.better_net }}"
           echo "Selected hook_method: ${{ github.event.inputs.hook_method }}"
+          echo "Selected kernel_v: ${{ github.event.inputs.kernel_v }}"
           
       - name: 安装配置环境依赖
         run: |
@@ -153,7 +135,6 @@ jobs:
           if [[ "${{ github.event.inputs.kernel_v}}" == "75" ]]; then
              echo "正在克隆源码仓库...使用cctv18修改后的一加12源码"
              git clone --depth=1 https://github.com/cctv18/android_kernel_common_oneplus_sm8650 -b oneplus/sm8650_v_15.0.0_oneplus12 common
-             # git clone --depth=1 https://github.com/cctv18/android_kernel_common_oneplus_sm8650 -b oneplus/sm8650_v_15.0.0_oneplus12 common
              echo "sourcecode=cctv18sm8650_v_15.0.0_oneplus12" >> $GITHUB_ENV
           else
              echo "正在克隆源码原版仓库..."
@@ -162,9 +143,7 @@ jobs:
              git clone --depth=1 https://github.com/OnePlusOSS/android_kernel_common_oneplus_sm8650 -b oneplus/"${{ github.event.inputs.basebranch }}" common            
              echo "sourcecode=${{ github.event.inputs.basebranch}}" >> $GITHUB_ENV
           fi
-
-
-            
+         
           
           echo ">>> 初始化仓库完成"
           git clone https://github.com/Carl1984/oppo_oplus_realme_sm8650.git
@@ -172,8 +151,7 @@ jobs:
 
           #lz4 1.10
           cp ./oppo_oplus_realme_sm8650/new/001-lz4.patch ./common/
-          cp ./oppo_oplus_realme_sm8650/new/lz4armv8.S ./common/         
-          
+          cp ./oppo_oplus_realme_sm8650/new/lz4armv8.S ./common/                   
           cp ./oppo_oplus_realme_sm8650/patches/002-zstd.patch ./common/
 
           #不挂载vendor，只补全链接文件时使用
@@ -221,8 +199,13 @@ jobs:
         run: |
           # 进入内核工作目录
           cd kernel_workspace
+
+          echo "正在配置SukiSU Ultra..."
           curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU-Ultra/refs/heads/main/kernel/setup.sh" | bash -s susfs-main
           cd ./KernelSU
+          # 获取当前 Git 提交的短哈希 (8位)
+          GIT_COMMIT_HASH=$(git rev-parse --short=8 HEAD)
+          echo "当前提交哈希: $GIT_COMMIT_HASH"
           export KSU_VERSION=$KSU_VERSION
           # 尝试最多 3 次获取 KernelSU API 版本号
           for i in {1..3}; do
@@ -241,18 +224,10 @@ jobs:
           [ -z "$KSU_API_VERSION" ] && KSU_API_VERSION="3.1.7"
           # 将 API 版本号存储到 GitHub 环境变量
           echo "KSU_API_VERSION=$KSU_API_VERSION" >> $GITHUB_ENV
-          # 创建版本定义模板&版本格式函数
+          # 创建版本定义模板&版本格式函数: 使用获取的提交哈希和固定后缀
           # KSU_VERSION_API: API 版本定义
           # KSU_VERSION_FULL: 完整版本定义
-          VERSION_DEFINITIONS=$(cat << EOF
-          define get_ksu_version_full
-          v\\$1-SukiSU-cctv18
-          endef
-
-          KSU_VERSION_API := $KSU_API_VERSION
-          KSU_VERSION_FULL := v$KSU_API_VERSION-SukiSU-cctv18
-          EOF
-              )
+          VERSION_DEFINITIONS=$'define get_ksu_version_full\nv\\$1-'"$GIT_COMMIT_HASH"$'@cctv18\nendef\n\nKSU_VERSION_API := '"$KSU_API_VERSION"$'\nKSU_VERSION_FULL := v'"$KSU_API_VERSION"$'-'"$GIT_COMMIT_HASH"$'@cctv18'
           # 清理内核 Makefile 中的旧版本定义
           # 删除版本函数
           sed -i '/define get_ksu_version_full/,/endef/d' kernel/Makefile
@@ -278,7 +253,8 @@ jobs:
 
           # 验证修改结果
           grep -A10 "REPO_OWNER" kernel/Makefile  # 检查插入点后的内容
-          grep "KSU_VERSION_FULL" kernel/Makefile # 确认版本定义存在         
+          grep "KSU_VERSION_FULL" kernel/Makefile # 确认版本定义存在
+          echo "SukiSU版本号: v${KSU_API_VERSION}-${GIT_COMMIT_HASH}@cctv18"     
           
       # - name: 添加 SukiSU-Ultra
       #   if: ${{github.event.inputs.ksu_type == 'SukiUltra'}}
@@ -292,27 +268,6 @@ jobs:
       #     echo "ksuver=$KSU_VERSION" >> $GITHUB_OUTPUT
       #     export KSU_VERSION=$KSU_VERSION
       #     sed -i "s/DKSU_VERSION=12800/DKSU_VERSION=$KSU_VERSION/" kernel/Makefile
-
-      - name: 应用 SUSFS 修补程序 SukiSU-Ultra
-        if: ${{github.event.inputs.ksu_type == 'SukiUltra'}}
-        run: |
-          cd kernel_workspace
-          git clone https://github.com/ShirkNeko/susfs4ksu.git -b gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}
-          git clone https://github.com/ShirkNeko/SukiSU_patch.git
-          cp ./susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch ./common/
-          cp ./susfs4ksu/kernel_patches/fs/* ./common/fs/
-          cp ./susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
-          cp ./SukiSU_patch/hooks/syscall_hooks.patch ./common/
-          cd ./common
-          patch -p1 < 50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch || true
-          patch -p1 < syscall_hooks.patch || true
-
-      - name: 应用 Hide Stuff 修补程序
-        if: ${{github.event.inputs.ksu_type == 'SukiUltra'}}
-        run: |
-          cd kernel_workspace/common
-          cp ../SukiSU_patch/69_hide_stuff.patch ./
-          patch -p1 < 69_hide_stuff.patch
 
       - name: Set up KernelSU Next
         if: ${{github.event.inputs.ksu_type == 'ksun'}}
@@ -335,63 +290,122 @@ jobs:
             sed -i "s/DKSU_VERSION=11998/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
           fi 
           echo "✅ KernelSU Next 配置完成"
-          
-      - name: 应用 SUSFS 修补程序 ksun
-        if: ${{github.event.inputs.ksu_type == 'ksun'}}
+
+
+
+      - name: 应用 KernelSU & SUSFS 补丁
         run: |
           cd kernel_workspace
-          if [[ "${{ github.event.inputs.lz4k_enable }}" == "true" ]]; then
+          if [[ ${{ github.event.inputs.ksu_type }} == "SukiUltra" ]]; then
+            echo "正在添加SukiSU Ultra补丁..."
+            git clone https://github.com/ShirkNeko/susfs4ksu.git -b gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}
             git clone https://github.com/ShirkNeko/SukiSU_patch.git
-          fi        
-          git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}
-          git clone https://github.com/WildKernels/kernel_patches.git
-          # git clone https://github.com/KernelSU-Next/kernel_patches.git
-          cp ./susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./KernelSU-Next/
-          cp ./susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch ./common/
-          cp ./susfs4ksu/kernel_patches/fs/* ./common/fs/
-          cp ./susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
-          #cp ./kernel_patches/next/susfs_fix_patches/v1.5.9/* ./KernelSU-Next/
-          #cp ./kernel_patches/next/0001-kernel-implement-susfs-v1.5.5-v1.5.7-KSUN-v1.0.8.patch ./KernelSU-Next/
+            cp ./susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch ./common/
+            cp ./susfs4ksu/kernel_patches/fs/* ./common/fs/
+            cp ./susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
+            cp ./SukiSU_patch/hooks/syscall_hooks.patch ./common/
+            cp ./SukiSU_patch/69_hide_stuff.patch ./common/
+            cd ./common
+            patch -p1 < 50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch || true
+            patch -p1 < syscall_hooks.patch || true
+            patch -p1 < 69_hide_stuff.patch || true
+          elif [[ "${{ github.event.inputs.ksu_type }}" == "ksun" ]]; then
+            echo "正在添加KernelSU Next补丁..."          
+            
+            git clone https://github.com/WildKernels/kernel_patches.git
+            cp ./kernel_patches/next/scope_min_manual_hooks_v1.4.patch ./common/
+            cp ./kernel_patches/69_hide_stuff.patch ./common/
 
-          # Apply patches
-          cd ./KernelSU-Next
-          if [[ "${{ github.event.inputs.SUSFS_ENABLED }}" == "true" ]]; then
-              echo "Applying SUSFS patches for KernelSU Next..."
+            if [[ "${{ github.event.inputs.SUSFS_ENABLED }}" == "true" ]]; then
+              git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}
+              cp ./susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch ./common/
+              cp ./susfs4ksu/kernel_patches/fs/* ./common/fs/
+              cp ./susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
+            fi 
 
-              # patch -p1 --forward --fuzz=3 < 10_enable_susfs_for_ksu.patch || true           
-
-              # patch -p1 --forward --fuzz=3 < fix_apk_sign.c.patch              
-
-              # patch -p1 --forward --fuzz=3 < fix_core_hook.c.patch
-              
-              # patch -p1 --forward --fuzz=3 < fix_selinux.c.patch              
-
-              # patch -p1 --forward --fuzz=3 < fix_ksud.c.patch
-
-              # patch -p1 --forward --fuzz=3 < fix_rules.c.patch              
-
-              # cp ../oppo_oplus_realme_sm8650/patches/0001-kernel-patch-susfs-v1.5.7-to-KernelSU-Next-v1.0.7.patch ./
-              # patch -p1 --forward --fuzz=3 < 0001-kernel-implement-susfs-v1.5.5-v1.5.7-KSUN-v1.0.8.patch || true
-
-              cd ../common
-
-
+            cd ./common
+            if [[ "${{ github.event.inputs.SUSFS_ENABLED }}" == "true" ]]; then
               patch -p1 < 50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch || true
-              cd ./KernelSU-Next
+            fi   
+            patch -p1 -N -F 3 < scope_min_manual_hooks_v1.4.patch || true
+            patch -p1 -N -F 3 < 69_hide_stuff.patch || true
 
-          fi     
-              cd ../common
-              # Replace next_hooks.patch with syscall_hooks.patch
-              #cp ../kernel_patches/next/syscall_hooks.patch ./
-              #patch -p1 -F 3 < syscall_hooks.patch
-              cp ../kernel_patches/next/scope_min_manual_hooks_v1.4.patch ./
-              patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
+      # - name: 应用 SUSFS 修补程序 SukiSU-Ultra
+      #   if: ${{github.event.inputs.ksu_type == 'SukiUltra'}}
+      #   run: |
+      #     cd kernel_workspace
+      #     git clone https://github.com/ShirkNeko/susfs4ksu.git -b gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}
+      #     git clone https://github.com/ShirkNeko/SukiSU_patch.git
+      #     cp ./susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch ./common/
+      #     cp ./susfs4ksu/kernel_patches/fs/* ./common/fs/
+      #     cp ./susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
+      #     cp ./SukiSU_patch/hooks/syscall_hooks.patch ./common/
+      #     cd ./common
+      #     patch -p1 < 50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch || true
+      #     patch -p1 < syscall_hooks.patch || true
 
-              #cp ../kernel_patches/syscall_hook/min_scope_syscall_hooks_v1.4.patch ./
-              #patch -p1 -F 3 < min_scope_syscall_hooks_v1.4.patch
+      # - name: 应用 Hide Stuff 修补程序
+      #   if: ${{github.event.inputs.ksu_type == 'SukiUltra'}}
+      #   run: |
+      #     cd kernel_workspace/common
+      #     cp ../SukiSU_patch/69_hide_stuff.patch ./
+      #     patch -p1 < 69_hide_stuff.patch
+
+
+          
+      # - name: 应用 SUSFS 修补程序 ksun
+      #   if: ${{github.event.inputs.ksu_type == 'ksun'}}
+      #   run: |
+      #     cd kernel_workspace   
+      #     git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}
+      #     git clone https://github.com/WildKernels/kernel_patches.git
+      #     # git clone https://github.com/KernelSU-Next/kernel_patches.git
+      #     cp ./susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./KernelSU-Next/
+      #     cp ./susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch ./common/
+      #     cp ./susfs4ksu/kernel_patches/fs/* ./common/fs/
+      #     cp ./susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
+      #     #cp ./kernel_patches/next/susfs_fix_patches/v1.5.9/* ./KernelSU-Next/
+      #     #cp ./kernel_patches/next/0001-kernel-implement-susfs-v1.5.5-v1.5.7-KSUN-v1.0.8.patch ./KernelSU-Next/
+
+      #     # Apply patches
+      #     cd ./KernelSU-Next
+      #     if [[ "${{ github.event.inputs.SUSFS_ENABLED }}" == "true" ]]; then
+      #         echo "Applying SUSFS patches for KernelSU Next..."
+
+      #         # patch -p1 --forward --fuzz=3 < 10_enable_susfs_for_ksu.patch || true           
+
+      #         # patch -p1 --forward --fuzz=3 < fix_apk_sign.c.patch              
+
+      #         # patch -p1 --forward --fuzz=3 < fix_core_hook.c.patch
+              
+      #         # patch -p1 --forward --fuzz=3 < fix_selinux.c.patch              
+
+      #         # patch -p1 --forward --fuzz=3 < fix_ksud.c.patch
+
+      #         # patch -p1 --forward --fuzz=3 < fix_rules.c.patch              
+
+      #         # cp ../oppo_oplus_realme_sm8650/patches/0001-kernel-patch-susfs-v1.5.7-to-KernelSU-Next-v1.0.7.patch ./
+      #         # patch -p1 --forward --fuzz=3 < 0001-kernel-implement-susfs-v1.5.5-v1.5.7-KSUN-v1.0.8.patch || true
+
+      #         cd ../common
+
+
+      #         patch -p1 < 50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch || true
+      #         cd ./KernelSU-Next
+
+      #     fi     
+      #         cd ../common
+      #         # Replace next_hooks.patch with syscall_hooks.patch
+      #         #cp ../kernel_patches/next/syscall_hooks.patch ./
+      #         #patch -p1 -F 3 < syscall_hooks.patch
+      #         cp ../kernel_patches/next/scope_min_manual_hooks_v1.4.patch ./
+      #         patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
+
+      #         #cp ../kernel_patches/syscall_hook/min_scope_syscall_hooks_v1.4.patch ./
+      #         #patch -p1 -F 3 < min_scope_syscall_hooks_v1.4.patch
                 
-              cp ../kernel_patches/69_hide_stuff.patch ./
-              patch -p1 -F 3 < 69_hide_stuff.patch
+      #         cp ../kernel_patches/69_hide_stuff.patch ./
+      #         patch -p1 -F 3 < 69_hide_stuff.patch
 
           
 
@@ -400,19 +414,8 @@ jobs:
         run: |
           cd kernel_workspace/common
           git apply --verbose -p1 < 001-lz4.patch --verbose
-          patch -p1 < 002-zstd.patch
+          patch -p1 < 002-zstd.patch         
 
-          
-      - name: 应用 lz4k 补丁
-        run: |
-          if [[ "${{ github.event.inputs.lz4k_enable }}" == "true" ]]; then
-            cd kernel_workspace/common
-            cp -r ../SukiSU_patch/other/zram/lz4k/include/linux/* ./include/linux/
-            cp -r ../SukiSU_patch/other/zram/lz4k/lib/* ./lib
-            cp -r ../SukiSU_patch/other/zram/lz4k/crypto/* ./crypto
-            cp ../SukiSU_patch/other/zram/zram_patch/${{ env.KERNEL_VERSION }}/lz4kd.patch ./
-            patch -p1 -F 3 < lz4kd.patch || true
-          fi
 
           
       - name: 添加 SUSFS 配置设置
@@ -466,24 +469,7 @@ jobs:
             echo "CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y" >> ./common/arch/arm64/configs/gki_defconfig
             echo "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y" >> ./common/arch/arm64/configs/gki_defconfig
           fi
-          if [[ "${{ github.event.inputs.lz4k_enable }}" == "true" ]]; then
-            echo "CONFIG_ZSMALLOC=y" >> ./common/arch/arm64/configs/gki_defconfig
-            echo "CONFIG_CRYPTO_LZ4HC=y" >> ./common/arch/arm64/configs/gki_defconfig
-            echo "CONFIG_CRYPTO_LZ4K=y" >> ./common/arch/arm64/configs/gki_defconfig
-            echo "CONFIG_CRYPTO_LZ4KD=y" >> ./common/arch/arm64/configs/gki_defconfig
-            echo "CONFIG_CRYPTO_842=y" >> ./common/arch/arm64/configs/gki_defconfig
-            # 以下配置未核实必要性，待测试
-            #echo "CONFIG_ZRAM_WRITEBACK=y" >> ./common/arch/arm64/configs/gki_defconfig
-            #sed -i 's/CONFIG_ZRAM=m/CONFIG_ZRAM=y/g' ./common/arch/arm64/configs/gki_defconfig
-            #sed -i 's/CONFIG_MODULE_SIG=y/CONFIG_MODULE_SIG=n/g' ./common/arch/arm64/configs/gki_defconfig
-          fi
-          # Add BBR
-          # echo "CONFIG_TCP_CONG_ADVANCED=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_TCP_CONG_BBR=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_NET_SCH_FQ=y" >> ./common/arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_TCP_CONG_BIC=n" >> ./common/arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_TCP_CONG_WESTWOOD=n" >> ./common/arch/arm64/configs/gki_defconfig
-          # echo "CONFIG_TCP_CONG_HTCP=n" >> ./common/arch/arm64/configs/gki_defconfig
+
 
           # 开启O2编译优化配置
           echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y" >> ./common/arch/arm64/configs/gki_defconfig
@@ -534,45 +520,7 @@ jobs:
       #     #禁用 defconfig 检查
       #     sed -i 's/check_defconfig//' ./common/build.config.gki
       
-      # - name: 添加 BBR 等一系列拥塞控制算法
-      #   run: |
-      #     if [[ "${{ github.event.inputs.bbr_enable }}" == "true" || "${{ github.event.inputs.bbr_enable }}" == "default" ]]; then
-      #       echo "正在添加BBR等拥塞控制算法..."
-      #       cd kernel_workspace
-      #       #开启TCP拥塞控制算法控制器（必需）
-      #       echo "CONFIG_TCP_CONG_ADVANCED=y" >> ./common/arch/arm64/configs/gki_defconfig
-      #       ################################################################################################################################
-      #       # BBR：基于链路容量的代表拥塞控制算法，不再使用丢包、延时等信号去衡量拥塞是否发生，而是直接对网络建模来应对、避免真实的网络拥塞；
-      #       # 具有高吞吐、低延迟、抗丢包的特点，但在手机上使用时由于持续探测带宽/RTT、高频计算与发包增加 CPU 和射频模块功耗，会增加耗电及发热；
-      #       # 且移动基站缓冲区深度通常较小（~50ms），BBR 的带宽探测阶段（ProbeRTT）过度降窗可能导致吞吐量骤降，且网络切换（WiFi→5G）时需重新
-      #       # 探测参数，反而增加延迟或导致速率振荡（短暂卡顿），且存在 RTT 不公平性，与基于丢包的流竞争时可能过于强势，在混合网络环境中
-      #       #（如 BBR + CUBIC 共存），BBR 会抢占更多其他软件的带宽，降低其他应用的公平性（如后台软件更新影响前台视频播放）。
-      #       # 因此，虽然BBR可以显著减少排队延迟，抗丢包能力强，带宽利用率高，但由于其会增加耗电，且易导致网络速率波动，故安卓系统默认不使用
-      #       # BBR拥塞算法，而是使用在吞吐量、稳定性、兼容性、能效之间取得最佳平衡的CUBIC算法。在开启BBR前，请考虑自己是否真的有使用BBR的必要。
-      #       ################################################################################################################################
-      #       echo "CONFIG_TCP_CONG_BBR=y" >> ./common/arch/arm64/configs/gki_defconfig
-      #       #CUBIC：安卓的默认TCP拥塞控制算法，在吞吐量、稳定性、兼容性、能效之间取得最佳平衡，具有高兼容性与公平性、抗网络波动性强、低计算开销的特点，是绝大部分移动场景的优先选择
-      #       echo "CONFIG_TCP_CONG_CUBIC=y" >> ./common/arch/arm64/configs/gki_defconfig
-      #       #VEGAS：基于时延的拥塞控制算法之一，将回路响应时间（Round Trip Time，RTT）增加视为出现拥塞，增加时增大拥塞窗口，减小时减小拥塞窗口
-      #       echo "CONFIG_TCP_CONG_VEGAS=y" >> ./common/arch/arm64/configs/gki_defconfig
-      #       #New Vegas：Vegas 算法的改进版，优化了 RTT 测量和竞争公平性，可以更准确地检测拥塞，与 Reno/CUBIC 共存能力提升
-      #       echo "CONFIG_TCP_CONG_NV=y" >> ./common/arch/arm64/configs/gki_defconfig
-      #       #Westwood+：基于带宽估计（ACK 到达率）动态设置拥塞窗口和慢启动阈值；快速恢复，适合无线网络（区分拥塞丢包与无线丢包）
-      #       echo "CONFIG_TCP_CONG_WESTWOOD=y" >> ./common/arch/arm64/configs/gki_defconfig
-      #       #HTCP：一种基于损失的算法，使用 AIMD 来控制拥塞窗口，根据 RTT 动态调整增长因子，结合延迟和丢包信号，针对高延迟的高速网络进行优化
-      #       echo "CONFIG_TCP_CONG_HTCP=y" >> ./common/arch/arm64/configs/gki_defconfig
-      #       #brutal：一种通过主动探测 + 激进抢占最大化吞吐量的拥塞算法，无拥塞窗口上限，轻度丢包（<20%）不降窗，避免类似 BBR 的 ProbeRTT 阶段，
-      #       #持续维持高发送速率，与 Reno/CUBIC 共存时，Brutal 可通过高频发包抢占 90%+ 带宽，适用于高丢包弱网环境（如公共 Wi-Fi、蜂窝网络）及
-      #       #直播推流、云游戏上行链路等需优先保证吞吐量而非延迟敏感的场景，提升弱网吞吐性能，对抗运营商 QoS 限速。但由于TCP Brutal 仅在应用程序
-      #       #对每个 TCP 连接设置带宽参数之后才能正常工作，绝大部分安卓应用都不支持该操作，故请勿将 TCP Brutal 设置成默认拥塞控制算法。
-      #       echo "CONFIG_TCP_CONG_BRUTAL=y" >> ./common/arch/arm64/configs/gki_defconfig
-      #       if [ "${{ github.event.inputs.bbr_enable }}" == "default" ]; then
-      #         echo "正在将BBR设为默认拥塞控制算法..."
-      #         echo "CONFIG_DEFAULT_TCP_CONG=bbr" >> ./common/arch/arm64/configs/gki_defconfig
-      #       else
-      #         echo "CONFIG_DEFAULT_TCP_CONG=cubic" >> ./common/arch/arm64/configs/gki_defconfig
-      #       fi
-      #     fi
+
 
       - name: 启用三星SSG IO调度器
         run: |
@@ -643,9 +591,6 @@ jobs:
             echo "未找到内核镜像文件，构建可能出错"
             exit 1
           fi
-          if [[ ${{ github.event.inputs.lz4k_enable }} == "true" ]]; then
-            wget https://raw.githubusercontent.com/Suxiaoqinx/kernel_manifest_OnePlus_Sukisu_Ultra/main/zram.zip
-          fi
           
           if [[ -n "${{ github.event.inputs.kernel_suffix }}" ]]; then
             zip -r ../AnyKernel3_${{ github.event.inputs.ksu_type }}_${{ env.KSUVER }}${{ steps.suffix.outputs.value }}_${{ github.event.inputs.kernel_suffix }}_${{ env.BT }}.zip ./*
@@ -677,11 +622,11 @@ jobs:
       - name: 设置环境变量
         run: |
           if [[ -n "${{ github.event.inputs.kernel_suffix }}" ]]; then
-            FULL_VERSION=${{ format('{0}.75-{1}', env.KERNEL_VERSION, github.event.inputs.kernel_suffix) }}
+            FULL_VERSION=${{ format('{0}.${{ github.event.inputs.kernel_v }}-{1}', env.KERNEL_VERSION, github.event.inputs.kernel_suffix) }}
             echo "FULL_VERSION=$FULL_VERSION" >> $GITHUB_ENV
             export FULL_VERSION=$FULL_VERSION
           else
-            FULL_VERSION=${{ format('{0}.75-{1}', env.KERNEL_VERSION, env.KERNEL_NAME) }}
+            FULL_VERSION=${{ format('{0}.${{ github.event.inputs.kernel_v }}-{1}', env.KERNEL_VERSION, env.KERNEL_NAME) }}
             echo "FULL_VERSION=$FULL_VERSION" >> $GITHUB_ENV
             export FULL_VERSION=$FULL_VERSION
           fi
@@ -707,7 +652,6 @@ jobs:
             - KUS Type：${{ github.event.inputs.ksu_type }}   
             - KPM：${{ github.event.inputs.KPM }}   （KSU 为 SukiSU 时 ）
             - KSUN SUSFS_ENABLED ：${{ github.event.inputs.SUSFS_ENABLED }}   （KSU 暂时SUSFS 编译出错 ）
-            - LZ4K支持：${{ github.event.inputs.lz4k_enable }}
             - 网络功能增强：${{ github.event.inputs.better_net }}
             - 三星SSG IO调度器支持：${{ github.event.inputs.ssg_enable }}
             - SukiSU管理器下载：[SukiSU-Ultra](https://github.com/ShirkNeko/SukiSU-Ultra/releases)
