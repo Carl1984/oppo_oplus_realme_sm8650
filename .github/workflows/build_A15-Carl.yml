@@ -622,14 +622,26 @@ jobs:
 
       - name: 设置环境变量
         run: |
-          if [[ -n "${{ github.event.inputs.kernel_suffix }}" ]]; then
-            FULL_VERSION=${{ format('{0}.${{ github.event.inputs.kernel_v }}-{1}', env.KERNEL_VERSION, github.event.inputs.kernel_suffix) }}
-            echo "FULL_VERSION=$FULL_VERSION" >> $GITHUB_ENV
-            export FULL_VERSION=$FULL_VERSION
+          if [[ "${{ github.event.inputs.kernel_v}}" == "75" ]]; then
+            if [[ -n "${{ github.event.inputs.kernel_suffix }}" ]]; then
+              FULL_VERSION=${{ format('{0}.75-{1}', env.KERNEL_VERSION, github.event.inputs.kernel_suffix) }}
+              echo "FULL_VERSION=$FULL_VERSION" >> $GITHUB_ENV
+              export FULL_VERSION=$FULL_VERSION
+            else
+              FULL_VERSION=${{ format('{0}.75-{1}', env.KERNEL_VERSION, env.KERNEL_NAME) }}
+              echo "FULL_VERSION=$FULL_VERSION" >> $GITHUB_ENV
+              export FULL_VERSION=$FULL_VERSION
+            fi
           else
-            FULL_VERSION=${{ format('{0}.${{ github.event.inputs.kernel_v }}-{1}', env.KERNEL_VERSION, env.KERNEL_NAME) }}
-            echo "FULL_VERSION=$FULL_VERSION" >> $GITHUB_ENV
-            export FULL_VERSION=$FULL_VERSION
+            if [[ -n "${{ github.event.inputs.kernel_suffix }}" ]]; then
+              FULL_VERSION=${{ format('{0}.118-{1}', env.KERNEL_VERSION, github.event.inputs.kernel_suffix) }}
+              echo "FULL_VERSION=$FULL_VERSION" >> $GITHUB_ENV
+              export FULL_VERSION=$FULL_VERSION
+            else
+              FULL_VERSION=${{ format('{0}.118-{1}', env.KERNEL_VERSION, env.KERNEL_NAME) }}
+              echo "FULL_VERSION=$FULL_VERSION" >> $GITHUB_ENV
+              export FULL_VERSION=$FULL_VERSION
+            fi  
           fi
           TIME="$(TZ='Asia/Shanghai' date +'%y%m%d%H%M%S')"
           TIME_FORM="$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')"
