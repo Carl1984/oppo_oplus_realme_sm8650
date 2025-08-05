@@ -329,7 +329,8 @@ jobs:
             fi   
             patch -p1 -N -F 3 < scope_min_manual_hooks_v1.4.patch || true
             patch -p1 -N -F 3 < 69_hide_stuff.patch || true
-
+          fi
+          
       # - name: 应用 SUSFS 修补程序 SukiSU-Ultra
       #   if: ${{github.event.inputs.ksu_type == 'SukiUltra'}}
       #   run: |
