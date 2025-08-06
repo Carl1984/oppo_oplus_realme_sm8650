@@ -272,11 +272,13 @@ jobs:
       - name: Set up KernelSU Next
         if: ${{github.event.inputs.ksu_type == 'ksun'}}
         run: |
+          echo "正在配置KernelSU Next..."
           cd kernel_workspace
           if [[ "${{ github.event.inputs.SUSFS_ENABLED }}" == "true" ]]; then
+            
             curl -LSs "https://raw.githubusercontent.com/pershoot/KernelSU-Next/next-susfs/kernel/setup.sh" | bash -s next-susfs
-            cd ./KernelSU-Next
-            KSU_VERSION=$(expr $(/usr/bin/git rev-list --count HEAD) "+" 10158) #因为使用了第三方，需要随时更新conmmit数以更正版本号
+            cd KernelSU-Next
+            KSU_VERSION=$(expr $(curl -sI "https://api.github.com/repos/pershoot/KernelSU-Next/commits?sha=next&per_page=1" | grep -i "link:" | sed -n 's/.*page=\([0-9]*\)>; rel="last".*/\1/p') "+" 10200)
             echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
             echo "ksuver=$KSU_VERSION" >> $GITHUB_OUTPUT
             sed -i "s/DKSU_VERSION=11998/DKSU_VERSION=${KSU_VERSION}/" kernel/Makefile
@@ -569,8 +571,8 @@ jobs:
         run: |
           cd kernel_workspace/common/out/arch/arm64/boot
           #curl -LO https://github.com/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases/download/0.11-beta/patch_linux
-          # curl -LO https://github.com/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases/download/0.12.0/patch_linux
-          curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch_linux
+          curl -LO https://github.com/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases/download/0.12.0/patch_linux
+          #curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" -o patch_linux
           chmod +x patch_linux
           ./patch_linux
           rm -f Image
