@@ -201,7 +201,11 @@ jobs:
           cd kernel_workspace
 
           echo "正在配置SukiSU Ultra..."
-          curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU-Ultra/refs/heads/main/kernel/setup.sh" | bash -s susfs-main
+          if [[ "${{ github.event.inputs.SUSFS_ENABLED }}" == "true" ]]; then
+            curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU-Ultra/refs/heads/main/kernel/setup.sh" | bash -s susfs-main
+          else  
+            curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU-Ultra/refs/heads/main/kernel/setup.sh" | bash -s main
+          fi
           cd ./KernelSU
           # 获取当前 Git 提交的短哈希 (8位)
           GIT_COMMIT_HASH=$(git rev-parse --short=8 HEAD)
@@ -300,17 +304,25 @@ jobs:
           cd kernel_workspace
           if [[ ${{ github.event.inputs.ksu_type }} == "SukiUltra" ]]; then
             echo "正在添加SukiSU Ultra补丁..."
-            git clone https://github.com/ShirkNeko/susfs4ksu.git -b gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}
+            
+
             git clone https://github.com/ShirkNeko/SukiSU_patch.git
-            cp ./susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch ./common/
-            cp ./susfs4ksu/kernel_patches/fs/* ./common/fs/
-            cp ./susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
             cp ./SukiSU_patch/hooks/syscall_hooks.patch ./common/
             cp ./SukiSU_patch/69_hide_stuff.patch ./common/
+            
+            if [[ "${{ github.event.inputs.SUSFS_ENABLED }}" == "true" ]]; then
+              git clone https://github.com/ShirkNeko/susfs4ksu.git -b gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}
+              cp ./susfs4ksu/kernel_patches/50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch ./common/
+              cp ./susfs4ksu/kernel_patches/fs/* ./common/fs/
+              cp ./susfs4ksu/kernel_patches/include/linux/* ./common/include/linux/
+            fi 
             cd ./common
-            patch -p1 < 50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch || true
-            patch -p1 < syscall_hooks.patch || true
+            if [[ "${{ github.event.inputs.SUSFS_ENABLED }}" == "true" ]]; then            
+              patch -p1 < 50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch || true
+              patch -p1 < syscall_hooks.patch || true
+            fi
             patch -p1 < 69_hide_stuff.patch || true
+            
           elif [[ "${{ github.event.inputs.ksu_type }}" == "ksun" ]]; then
             echo "正在添加KernelSU Next补丁..."          
             
@@ -581,7 +593,7 @@ jobs:
       - name: Set suffix
         id: suffix
         run: |
-          echo "value=${{ github.event.inputs.KPM == 'true' && '_KPM' || '' }}${{ github.event.inputs.better_net == 'true' && '_betternet' || '' }}${{ github.event.inputs.ssg_enable == 'true' && '_ssg' || '' }}" >> $GITHUB_OUTPUT
+          echo "value=${{ github.event.inputs.KPM == 'true' && '_KPM' || '' }}${{ github.event.inputs.SUSFS_ENABLED == 'true' && '_SUSFS' || '' }}${{ github.event.inputs.better_net == 'true' && '_betternet' || '' }}${{ github.event.inputs.ssg_enable == 'true' && '_ssg' || '' }}" >> $GITHUB_OUTPUT
           
       - name: 克隆 AnyKernel3 并打包
         run: |
