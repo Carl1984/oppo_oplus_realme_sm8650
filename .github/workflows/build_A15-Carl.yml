@@ -608,9 +608,9 @@ jobs:
           fi
           
           if [[ -n "${{ github.event.inputs.kernel_suffix }}" ]]; then
-            zip -r ../AnyKernel3_${{ github.event.inputs.ksu_type }}_${{ env.KSUVER }}${{ steps.suffix.outputs.value }}_${{ github.event.inputs.kernel_suffix }}_${{ env.BT }}.zip ./*
+            zip -r ../AnyKernel3_${{ github.event.inputs.ksu_type }}_${{ env.KSUVER }}${{ steps.suffix.outputs.value }}_${{ github.event.inputs.kernel_suffix }}_${{ github.event.inputs.kernel_v }}_${{ env.BT }}.zip ./*
           else
-            zip -r ../AnyKernel3_${{ github.event.inputs.ksu_type }}_${{ env.KSUVER }}${{ steps.suffix.outputs.value }}_${{ env.KERNEL_NAME }}_${{ env.BT }}.zip ./*
+            zip -r ../AnyKernel3_${{ github.event.inputs.ksu_type }}_${{ env.KSUVER }}${{ steps.suffix.outputs.value }}_${{ env.KERNEL_NAME }}_${{ github.event.inputs.kernel_v }}_${{ env.BT }}.zip ./*
           fi
 
       - name: 上传 ZIP 工件
